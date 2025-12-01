@@ -6,6 +6,7 @@ import { requireAuth } from './middleware/auth.js'
 
 import authRouter from './routes/auth.js'
 import meRouter from './routes/me.js'
+import habitRouter from './routes/habits.js'
 
 // create the app
 const app = express()
@@ -22,6 +23,8 @@ app.use(cors())
 app.use('/api/auth', authRouter)
 // mount profile/user routes
 app.use('/api', meRouter);
+// mount habit routes
+app.use('/api/habits', habitRouter);
 
 // base route
 app.get('/', (_req, res) => {
@@ -31,6 +34,18 @@ app.get('/', (_req, res) => {
 // health check route
 app.get('/up', (_req, res) => {
   res.json({status: 'up'})
+})
+
+// 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Not found' })
+})
+
+// Global error handler
+app.use((err, req, res, _next) => {
+  console.error('Unhandled error:', err)
+  // Avoid leaking internal details; return generic message
+  res.status(500).json({ error: 'Internal server error' })
 })
 
 // start the server
