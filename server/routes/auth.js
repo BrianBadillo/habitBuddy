@@ -160,7 +160,7 @@ router.post('/login', async (req, res) => {
         .eq('id', userId)
         .single();
     if (profileError || !profileData) {
-        return res.status(400).json({ error: 'Failed to fetch user profile' });
+        return res.status(400).json({ error: profileError?.message || 'Failed to fetch user profile' });
     }
 
     res.json({

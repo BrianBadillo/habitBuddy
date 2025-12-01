@@ -3,11 +3,10 @@ import { supabase } from '../db/supabaseClient.js'
 // Middleware to verify access token from HttpOnly cookie
 export async function requireAuth(req, res, next) {
     try {
-        // Prefer Authorization: Bearer <token>; fallback to cookie 'session'
-        const authHeader = req.headers.authorization || '';
-        const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null
-        const cookieToken = req.cookies?.session
-        const accessToken = bearer || cookieToken
+        // Retrieve access token from cookies
+        const accessToken = req.cookies?.session
+
+        console.log("Auth middleware access token:", req.cookies);
 
         // If no token provided, respond with 401
         if (!accessToken) {
