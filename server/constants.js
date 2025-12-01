@@ -1,8 +1,8 @@
 // Frequency constants for habits
 export const FREQUENCY = {
-    DAILY: 'Daily',
-    WEEKLY: 'Weekly',
-    MONTHLY: 'Monthly'
+    DAILY: 'daily',
+    WEEKLY: 'weekly',
+    MONTHLY: 'monthly'
 }
 
 // Difficulty levels for habits
