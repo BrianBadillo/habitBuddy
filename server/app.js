@@ -15,13 +15,16 @@ import petRouter from './routes/pets.js'
 // create the app
 const app = express()
 // it's nice to set the port number so it's always the same
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 3001);
 // set up some middleware to handle processing body requests
 app.use(express.json())
 // set up cookie parser middleware to handle HttpOnly cookies
 app.use(cookieParser())
 // set up some midlleware to handle cors
-app.use(cors())
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+}))
 
 // mount auth routes
 app.use('/api/auth', authRouter)
