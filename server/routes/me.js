@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import e, { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { requireAuth } from '../middleware/auth.js'
 import { TABLES } from '../db/tables.js'
@@ -75,12 +75,12 @@ router.get('/me', requireAuth, async (req, res) => {
         .from(TABLES.PETS)
         .select(`id, name, level, xp, mood,
             petType:pet_type_id (id, name, base_sprite_url),
-            currentStage:evolution_stage_id (id, stage_number, name, sprite_url)`)
+            currentStage:current_stage_id (id, stage_number, name, sprite_url)`)
         .eq('user_id', userId)
         .maybeSingle(); // maybeSingle in case user has no pet yet
 
     if (petError) {
-        return res.status(500).json({ error: 'Error fetching pet data' });
+        return res.status(500).json({ error: error.message || 'Error fetching pet data' });
     }
 
     res.json({

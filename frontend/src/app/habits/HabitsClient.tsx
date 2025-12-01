@@ -38,7 +38,6 @@ export function HabitsClient({ initialHabits }: Props) {
     try {
       setSubmitting(true);
 
-      // 🔥 matches your POST /api/habits spec now
       const created = await api.createHabit({
         name: name.trim(),
         description: description.trim() || undefined,
