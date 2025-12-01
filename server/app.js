@@ -7,6 +7,7 @@ import { requireAuth } from './middleware/auth.js'
 import authRouter from './routes/auth.js'
 import meRouter from './routes/me.js'
 import habitRouter from './routes/habits.js'
+import petRouter from './routes/pets.js'
 
 // create the app
 const app = express()
@@ -25,6 +26,8 @@ app.use('/api/auth', authRouter)
 app.use('/api', meRouter);
 // mount habit routes
 app.use('/api/habits', habitRouter);
+// mount pet routes
+app.use('/api/pets', petRouter);
 
 // base route
 app.get('/', (_req, res) => {
@@ -54,3 +57,4 @@ app.listen(app.get('port'), () => {
   console.log('  Press CTRL-C to stop\n');
 });
   
+// TODO: At midnight every day, run a job to update habit streaks, habit "is_active" statuses, and pet moods if the last interaction date is older than today. (and on server start)
