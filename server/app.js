@@ -11,6 +11,7 @@ import authRouter from './routes/auth.js'
 import meRouter from './routes/me.js'
 import habitRouter from './routes/habits.js'
 import petRouter from './routes/pets.js'
+import quoteRouter from './routes/quote.js'
 
 // create the app
 const app = express()
@@ -34,6 +35,8 @@ app.use('/api', meRouter);
 app.use('/api/habits', habitRouter);
 // mount pet routes
 app.use('/api/pets', petRouter);
+// mount quote routes
+app.use('/api/quote', quoteRouter);
 
 // base route
 app.get('/', (_req, res) => {
