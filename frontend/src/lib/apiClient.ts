@@ -1,0 +1,226 @@
+// src/lib/apiClient.ts
+
+import {
+  MeResponse,
+  MeSummary,
+  Habit,
+  HabitWithStreak,
+  HabitCompletion,
+  QuoteResponse,
+  Pet,
+  Streak,
+  FriendEntry,
+  FriendSummary,
+  LeaderboardXpEntry,
+  LeaderboardStreakEntry,
+  Frequency,
+  User,
+} from '@/types/api';
+
+type Difficulty = 'Trivial' | 'Easy' | 'Medium' | 'Hard';
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_BASE_URL ??
+  'https://119b12b8-663c-49dd-8d53-209552e971d8.mock.pstmn.io';
+
+async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const url = `${API_BASE}${path}`;
+  console.log('apiFetch ->', url);
+
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> | undefined),
+    },
+    cache: 'no-store',
+    credentials: 'include'
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API ${path} failed: ${res.status} ${text}`);
+  }
+
+  return res.json();
+}
+
+export const api = {
+  // -------- Auth --------
+
+  authSignup(data: {
+    email: string;
+    password: string;
+    username: string;
+    displayName?: string;
+  }) {
+    return apiFetch<{ user: User }>('/api/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  authLogin(data: { email: string; password: string }) {
+    return apiFetch<{ user: User }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // -------- Profile / User --------
+
+  getMe() {
+    return apiFetch<MeResponse>('/api/me');
+  },
+
+  updateMe(data: Partial<{ username: string; displayName: string }>) {
+    return apiFetch('/api/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getMeSummary() {
+    return apiFetch<MeSummary>('/api/me/summary');
+  },
+
+  // -------- Habits --------
+
+  getHabits(active?: boolean) {
+    const qs = active !== undefined ? `?active=${active}` : '';
+    return apiFetch<Habit[]>(`/api/habits${qs}`);
+  },
+
+  getHabit(habitId: string) {
+    return apiFetch<HabitWithStreak>(`/api/habits/${habitId}`);
+  },
+
+  getHabitHistory(habitId: string, from?: string, to?: string) {
+    const params = new URLSearchParams();
+    if (from) params.set('from', from);
+    if (to) params.set('to', to);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return apiFetch<HabitCompletion[]>(
+      `/api/habits/${habitId}/history${qs}`
+    );
+  },
+
+  getHabitStreak(habitId: string) {
+    return apiFetch<Streak>(`/api/habits/${habitId}/streak`);
+  },
+
+  createHabit(data: {
+    name: string;
+    description?: string;
+    frequency: Frequency;    // 'daily' | 'weekly' | 'monthly'
+    difficulty?: Difficulty; // 'Trivial' | 'Easy' | 'Medium' | 'Hard'
+    isActive?: boolean;
+  }) {
+    return apiFetch<Habit>('/api/habits', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateHabit(
+    habitId: string,
+    data: Partial<{
+      name: string;
+      description: string;
+      frequency: Frequency;
+      isActive: boolean;
+      difficulty: Difficulty;
+    }>
+  ) {
+    return apiFetch<Habit>(`/api/habits/${habitId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteHabit(habitId: string) {
+    return apiFetch<void>(`/api/habits/${habitId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  checkInHabit(habitId: string, completedDate: string) {
+    return apiFetch<{ habit: Habit; streak: Streak; pet: Pet }>(
+      `/api/habits/${habitId}/check-in`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ completedDate }),
+      }
+    );
+  },
+
+  undoHabitCompletion(habitId: string, completionId: number) {
+    return apiFetch<{ habit: Habit; streak: Streak; pet: Pet }>(
+      `/api/habits/${habitId}/check-in/${completionId}`,
+      {
+        method: 'DELETE',
+      }
+    );
+  },
+
+  // -------- Pet --------
+
+  getPet() {
+    return apiFetch<Pet>('/api/pet');
+  },
+
+  createPet(data: { petTypeId: number; name: string }) {
+    return apiFetch<Pet>('/api/pet', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updatePet(
+    data: Partial<{
+      name: string;
+    }>
+  ) {
+    return apiFetch<Pet>('/api/pet', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  pingPet(interactionType: string) {
+    return apiFetch<Pet>('/api/pet/ping', {
+      method: 'POST',
+      body: JSON.stringify({ interactionType }),
+    });
+  },
+
+  // -------- Friends / Social --------
+
+  getFriends() {
+    return apiFetch<FriendEntry[]>('/api/friends');
+  },
+
+  getFriendSummary(friendId: string) {
+    return apiFetch<FriendSummary>(`/api/friends/${friendId}/summary`);
+  },
+
+  // -------- Leaderboards --------
+
+  getXpLeaderboard(scope: 'friends' | 'global' = 'friends') {
+    return apiFetch<LeaderboardXpEntry[]>(
+      `/api/leaderboard/xp?scope=${scope}`
+    );
+  },
+
+  getStreakLeaderboard(scope: 'friends' | 'global' = 'global') {
+    return apiFetch<LeaderboardStreakEntry[]>(
+      `/api/leaderboard/streaks?scope=${scope}`
+    );
+  },
+
+  // -------- Quote --------
+
+  getDailyQuote() {
+    return apiFetch<QuoteResponse>('/api/quote');
+  },
+};
