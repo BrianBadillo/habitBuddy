@@ -21,7 +21,7 @@ type Difficulty = 'Trivial' | 'Easy' | 'Medium' | 'Hard';
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
-  'https://119b12b8-663c-49dd-8d53-209552e971d8.mock.pstmn.io';
+  'http://localhost:3001';
 
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const url = `${API_BASE}${path}`;

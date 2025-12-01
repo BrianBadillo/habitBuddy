@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const links = [
-  { href: '/', label: 'Dashboard' },
+  { href: '/dashboard', label: 'Dashboard' },
   { href: '/habits', label: 'Habits' },
   { href: '/pet', label: 'My Pet' },
   { href: '/friends', label: 'Friends' },
@@ -39,7 +39,6 @@ export function Navbar() {
           })}
         </div>
 
-        {/* Auth link */}
         <Link
           href="/auth"
           className={`text-sm px-3 py-1.5 rounded-md border ${
