@@ -158,16 +158,24 @@ router.get('/me/summary', requireAuth, async (req, res) => {
         .eq('is_active', true);
     
     // Fetch total completions (sum of completed_count)
-    const { data: completionsData, error: completionsError } = await supabase
-        .from(TABLES.HABIT_COMPLETIONS)
-        .select('completed_count')
-        .eq('user_id', userId);
-    if (completionsError) {
-        return res.status(500).json({ error: 'Error fetching completions data' });
+    let totalCompletions = 0;
+    try {
+        const { data: completionsData, error: completionsError } = await supabase
+            .from(TABLES.HABIT_COMPLETIONS)
+            .select('completed_count')
+            .eq('user_id', userId);
+
+        if (completionsError) {
+            console.error('Error fetching completions:', completionsError);
+        } else if (Array.isArray(completionsData) && completionsData.length > 0) {
+            totalCompletions = completionsData.reduce(
+                (sum, record) => sum + (record.completed_count || 0),
+                0
+            );
+        }
+    } catch (err) {
+        console.error('Unexpected completions query error:', err);
     }
-    const totalCompletions = completionsData // Sum up completed_count fields
-        ? completionsData.reduce((sum, record) => sum + (record.completed_count || 0), 0)
-        : 0;
     
     // Fetch best streak
     const { data: bestStreakData } = await supabase
@@ -176,14 +184,14 @@ router.get('/me/summary', requireAuth, async (req, res) => {
         .eq('user_id', userId)
         .order('longest_streak', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
     
     // Fetch current level
     const { data: petData } = await supabase
         .from(TABLES.PETS)
         .select('level')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
     res.json({
         totalHabits: totalHabits || 0,
