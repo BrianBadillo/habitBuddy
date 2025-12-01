@@ -27,12 +27,31 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
   const url = `${API_BASE}${path}`;
   console.log('apiFetch ->', url);
 
+  // Automatically forward cookies when running on the server
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
+  // If we're on the server (not in browser), forward the session cookie
+  if (typeof window === 'undefined') {
+    try {
+      // Dynamically import cookies only on the server
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      const sessionToken = cookieStore.get('session')?.value;
+      if (sessionToken) {
+        headers['Cookie'] = `session=${sessionToken}`;
+      }
+    } catch (e) {
+      // cookies() might not be available in some contexts, that's okay
+      console.warn('Could not access cookies:', e);
+    }
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers as Record<string, string> | undefined),
-    },
+    headers,
     cache: 'no-store',
     credentials: 'include'
   });
