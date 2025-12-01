@@ -59,39 +59,34 @@ function mapPet(dbPet) {
 }*/
 router.get('/me', requireAuth, async (req, res) => {
     const userId = req.user.id;
-    try {
-        // Fetch user profile
-        const { data: profileData, error: profileError } = await supabase
-            .from(TABLES.PROFILES)
-            .select('id, username, display_name, role, created_at')
-            .eq('id', userId)
-            .single();
-            
-        if (profileError || !profileData) {
-            return res.status(404).json({ error: 'Profile not found' });
-        }
 
-        const { data: petData, error: petError } = await supabase
-            .from(TABLES.PETS)
-            .select(`id, name, level, xp, mood,
-                petType:pet_type_id (id, name, base_sprite_url),
-                currentStage:evolution_stage_id (id, stage_number, name, sprite_url)`)
-            .eq('user_id', userId)
-            .maybeSingle(); // maybeSingle in case user has no pet yet
-
-        if (petError) {
-            return res.status(500).json({ error: 'Error fetching pet data' });
-        }
-
-        res.json({
-            user: mapProfile(profileData),
-            pet: petData ? mapPet(petData) : null
-        });
+    // Fetch user profile
+    const { data: profileData, error: profileError } = await supabase
+        .from(TABLES.PROFILES)
+        .select('id, username, display_name, role, created_at')
+        .eq('id', userId)
+        .single();
         
-    } catch (e) {
-        console.error(e)
-        res.status(500).json({ error: 'Internal server error' });
+    if (profileError || !profileData) {
+        return res.status(404).json({ error: 'Profile not found' });
     }
+
+    const { data: petData, error: petError } = await supabase
+        .from(TABLES.PETS)
+        .select(`id, name, level, xp, mood,
+            petType:pet_type_id (id, name, base_sprite_url),
+            currentStage:evolution_stage_id (id, stage_number, name, sprite_url)`)
+        .eq('user_id', userId)
+        .maybeSingle(); // maybeSingle in case user has no pet yet
+
+    if (petError) {
+        return res.status(500).json({ error: 'Error fetching pet data' });
+    }
+
+    res.json({
+        user: mapProfile(profileData),
+        pet: petData ? mapPet(petData) : null
+    });
 });
 
 // PUT /api/me - Update the user’s profile info (username, displayName).
@@ -118,28 +113,23 @@ router.put('/me', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Nothing to update' })
     }
 
-    try {
-        // Update user profile
-        const update = {};
-        if (username) update.username = username;
-        if (displayName) update.display_name = displayName;
+    // Update user profile
+    const update = {};
+    if (username) update.username = username;
+    if (displayName) update.display_name = displayName;
 
-        const { data: updatedProfile, error: updateError } = await supabase
-            .from(TABLES.PROFILES)
-            .update(update)
-            .eq('id', userId)
-            .select('id, username, display_name, role, created_at')
-            .single();
+    const { data: updatedProfile, error: updateError } = await supabase
+        .from(TABLES.PROFILES)
+        .update(update)
+        .eq('id', userId)
+        .select('id, username, display_name, role, created_at')
+        .single();
 
-        if (updateError || !updatedProfile) {
-            return res.status(400).json({ error: 'Error updating profile' });
-        }
-
-        res.json(mapProfile(updatedProfile));
-    } catch (e) {
-        console.error(e)
-        res.status(500).json({ error: 'Internal server error' });
+    if (updateError || !updatedProfile) {
+        return res.status(400).json({ error: 'Error updating profile' });
     }
+
+    res.json(mapProfile(updatedProfile));
 });
 
 // GET /api/me/summary - Get overall stats like total habits, completions, and best streak.
@@ -153,59 +143,55 @@ router.put('/me', requireAuth, async (req, res) => {
 }*/
 router.get('/me/summary', requireAuth, async (req, res) => {
     const userId = req.user.id;
-    try {
-        // Fetch total habits
-        const { count: totalHabits } = await supabase
-            .from(TABLES.HABITS)
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId);
-        
-        // Fetch active habits
-        const { count: activeHabits } = await supabase
-            .from(TABLES.HABITS)
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', userId)
-            .eq('is_active', true);
-        
-        // Fetch total completions (sum of completed_count)
-        const { data: completionsData, error: completionsError } = await supabase
-            .from(TABLES.HABIT_COMPLETIONS)
-            .select('completed_count')
-            .eq('user_id', userId);
-        if (completionsError) {
-            return res.status(500).json({ error: 'Error fetching completions data' });
-        }
-        const totalCompletions = completionsData // Sum up completed_count fields
-            ? completionsData.reduce((sum, record) => sum + (record.completed_count || 0), 0)
-            : 0;
-        
-        // Fetch best streak
-        const { data: bestStreakData } = await supabase
-            .from(TABLES.STREAKS)
-            .select('longest_streak')
-            .eq('user_id', userId)
-            .order('longest_streak', { ascending: false })
-            .limit(1)
-            .single();
-        
-        // Fetch current level
-        const { data: petData } = await supabase
-            .from(TABLES.PETS)
-            .select('level')
-            .eq('user_id', userId)
-            .single();
 
-        res.json({
-            totalHabits: totalHabits || 0,
-            activeHabits: activeHabits || 0,
-            totalCompletions: totalCompletions || 0,
-            bestStreak: bestStreakData ? bestStreakData.longest_streak : 0,
-            currentLevel: petData ? petData.level : null
-        });
-    } catch (e) {
-        console.error(e)
-        res.status(500).json({ error: 'Internal server error' });
+    // Fetch total habits
+    const { count: totalHabits } = await supabase
+        .from(TABLES.HABITS)
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
+    
+    // Fetch active habits
+    const { count: activeHabits } = await supabase
+        .from(TABLES.HABITS)
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_active', true);
+    
+    // Fetch total completions (sum of completed_count)
+    const { data: completionsData, error: completionsError } = await supabase
+        .from(TABLES.HABIT_COMPLETIONS)
+        .select('completed_count')
+        .eq('user_id', userId);
+    if (completionsError) {
+        return res.status(500).json({ error: 'Error fetching completions data' });
     }
+    const totalCompletions = completionsData // Sum up completed_count fields
+        ? completionsData.reduce((sum, record) => sum + (record.completed_count || 0), 0)
+        : 0;
+    
+    // Fetch best streak
+    const { data: bestStreakData } = await supabase
+        .from(TABLES.STREAKS)
+        .select('longest_streak')
+        .eq('user_id', userId)
+        .order('longest_streak', { ascending: false })
+        .limit(1)
+        .single();
+    
+    // Fetch current level
+    const { data: petData } = await supabase
+        .from(TABLES.PETS)
+        .select('level')
+        .eq('user_id', userId)
+        .single();
+
+    res.json({
+        totalHabits: totalHabits || 0,
+        activeHabits: activeHabits || 0,
+        totalCompletions: totalCompletions || 0,
+        bestStreak: bestStreakData ? bestStreakData.longest_streak : 0,
+        currentLevel: petData ? petData.level : null
+    });
 });
 
 export default router;

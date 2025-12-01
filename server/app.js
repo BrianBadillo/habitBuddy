@@ -37,12 +37,12 @@ app.get('/up', (_req, res) => {
 })
 
 // 404 handler for unknown routes
-app.use((req, res) => {
+app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' })
 })
 
 // Global error handler
-app.use((err, req, res, _next) => {
+app.use((err, _req, res, _next) => {
   console.error('Unhandled error:', err)
   // Avoid leaking internal details; return generic message
   res.status(500).json({ error: 'Internal server error' })

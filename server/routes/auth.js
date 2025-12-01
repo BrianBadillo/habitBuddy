@@ -68,6 +68,8 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json({ error: error?.message || 'Failed to create user profile' });
     }
 
+    // TODO: Add default pet creation here
+
     // Respond with full profile info
     res.status(201).json({
         user: {
