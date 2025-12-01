@@ -6,8 +6,6 @@ export async function requireAuth(req, res, next) {
         // Retrieve access token from cookies
         const accessToken = req.cookies?.session
 
-        console.log("Auth middleware access token:", req.cookies);
-
         // If no token provided, respond with 401
         if (!accessToken) {
             return res.status(401).json({ error: 'Unauthorized' });
