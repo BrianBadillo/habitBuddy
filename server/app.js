@@ -103,6 +103,8 @@ async function dailyMaintenance() {
     // ========================================================================
     // 2. Find all habits that are marked "is_active" = false and reactivate them if their frequency matches today
     // ========================================================================
+    console.log('[Daily Maintenance] Reactivating habits based on frequency...');
+
     // Fetch all inactive habits
     const { data: inactiveHabits, error: inactiveHabitsError } = await supabase
       .from(TABLES.HABITS)
@@ -146,6 +148,8 @@ async function dailyMaintenance() {
     // ========================================================================
     // 3. Decrease all pet moods by one level
     // ========================================================================
+    console.log('[Daily Maintenance] Updating pet moods...');
+    
     // Fetch all pets
     const { data: pets, error: petsError } = await supabase
       .from(TABLES.PETS)
@@ -197,9 +201,6 @@ function scheduleDailyMaintenance() {
 app.listen(app.get('port'), () => {
   console.log('App is running at http://localhost:%d in %s mode', app.get('port'), app.get('env'));
   console.log('  Press CTRL-C to stop\n');
-
-  // Run daily maintenance on server start
-  dailyMaintenance();
 
   // Schedule subsequent daily maintenance jobs
   scheduleDailyMaintenance();

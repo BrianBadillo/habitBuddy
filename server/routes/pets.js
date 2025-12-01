@@ -189,3 +189,5 @@ router.post('/ping', requireAuth, async (req, res) => {
         lastInteractionDate: updatedPetData.last_interaction_date
     });
 });
+
+export default router;

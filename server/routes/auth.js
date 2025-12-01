@@ -1,4 +1,4 @@
-import { Router } from 'express'
+import e, { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { TABLES } from '../db/tables.js'
 import { PET_MOOD } from '../constants.js'
@@ -69,23 +69,7 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json({ error: error?.message || 'Failed to create user profile' });
     }
 
-    // Create default pet for the new user
-    // First, get the first available pet type
-    const { data: petTypeData, error: petTypeError } = await supabase
-        .from(TABLES.PET_TYPES)
-        .select('id')
-        .order('id', { ascending: true })
-        .limit(1)
-        .single();
-
-    if (petTypeError || !petTypeData) {
-        // Rollback: delete the auth user and profile if pet type fetch fails
-        await supabase.auth.admin.deleteUser(userId);
-        await supabase.from(TABLES.PROFILES).delete().eq('id', userId);
-        return res.status(500).json({ error: 'Failed to fetch pet type for default pet' });
-    }
-
-    const defaultPetTypeId = petTypeData.id;
+    const defaultPetTypeId = 1;
     const firstStageId = 1;
 
     // Create the default pet
@@ -108,7 +92,7 @@ router.post('/signup', async (req, res) => {
         // Rollback: delete the auth user and profile if pet creation fails
         await supabase.auth.admin.deleteUser(userId);
         await supabase.from(TABLES.PROFILES).delete().eq('id', userId);
-        return res.status(500).json({ error: 'Failed to create default pet for user' });
+        return res.status(500).json({ error: error?.message || 'Failed to create default pet for user' });
     }
 
     // Respond with full profile info
