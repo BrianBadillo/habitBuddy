@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { TABLES } from '../db/tables.js'
+import { PET_MOOD } from '../constants.js'
 
 // Create a router for auth-related routes
 const router = Router()
@@ -68,7 +69,47 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json({ error: error?.message || 'Failed to create user profile' });
     }
 
-    // TODO: Add default pet creation here
+    // Create default pet for the new user
+    // First, get the first available pet type
+    const { data: petTypeData, error: petTypeError } = await supabase
+        .from(TABLES.PET_TYPES)
+        .select('id')
+        .order('id', { ascending: true })
+        .limit(1)
+        .single();
+
+    if (petTypeError || !petTypeData) {
+        // Rollback: delete the auth user and profile if pet type fetch fails
+        await supabase.auth.admin.deleteUser(userId);
+        await supabase.from(TABLES.PROFILES).delete().eq('id', userId);
+        return res.status(500).json({ error: 'Failed to fetch pet type for default pet' });
+    }
+
+    const defaultPetTypeId = petTypeData.id;
+    const firstStageId = 1;
+
+    // Create the default pet
+    const { data: petData, error: petError } = await supabase
+        .from(TABLES.PETS)
+        .insert({
+            user_id: userId,
+            pet_type_id: defaultPetTypeId,
+            name: `${username}'s Pet`,
+            xp: 0,
+            level: 1,
+            mood: PET_MOOD.HAPPY,
+            current_stage_id: firstStageId,
+            last_interaction_date: new Date().toISOString().split('T')[0] // YYYY-MM-DD
+        })
+        .select('id')
+        .single()
+
+    if (petError || !petData) {
+        // Rollback: delete the auth user and profile if pet creation fails
+        await supabase.auth.admin.deleteUser(userId);
+        await supabase.from(TABLES.PROFILES).delete().eq('id', userId);
+        return res.status(500).json({ error: 'Failed to create default pet for user' });
+    }
 
     // Respond with full profile info
     res.status(201).json({
