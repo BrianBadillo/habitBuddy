@@ -62,7 +62,7 @@ router.post('/signup', async (req, res) => {
         .single();
     
     // Handle potential errors
-    if (error || !data) {
+    if (profileError || !profileData) {
         // Rollback: delete the auth user if profile creation fails
         await supabase.auth.admin.deleteUser(userId);
         return res.status(400).json({ error: error?.message || 'Failed to create user profile' });
