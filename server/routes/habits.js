@@ -32,12 +32,21 @@ Example response:
 ]*/
 router.get('/', requireAuth, async (req, res) => {
     const userId = req.user.id;
+    const { active } = req.query;
 
-    const { data, error } = await supabase
+    let query = supabase
         .from(TABLES.HABITS)
         .select('id, name, description, frequency, is_active, difficulty, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .eq('user_id', userId);
+
+    // Filter by active status if query parameter is provided
+    if (active !== undefined) {
+        const isActive = active === 'true';
+        query = query.eq('is_active', isActive);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
     if (error) {
         return res.status(500).json({ error: error.message });
     }
