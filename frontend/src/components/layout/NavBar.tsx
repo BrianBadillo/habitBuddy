@@ -1,4 +1,4 @@
-// src/components/layout/Navbar.tsx
+// src/components/layout/Navbar.tsx   { href: '/pet', label: 'My Pet' },
 'use client';
 
 import Link from 'next/link';
@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
   { href: '/habits', label: 'Habits' },
-  { href: '/pet', label: 'My Pet' },
   { href: '/friends', label: 'Friends' },
   { href: '/leaderboard', label: 'Leaderboard' },
 ];
@@ -38,17 +37,6 @@ export function Navbar() {
             );
           })}
         </div>
-
-        <Link
-          href="/auth"
-          className={`text-sm px-3 py-1.5 rounded-md border ${
-            pathname === '/auth'
-              ? 'bg-slate-900 text-white border-slate-900'
-              : 'text-slate-700 border-slate-300 hover:bg-slate-100'
-          }`}
-        >
-          Log in / Sign up
-        </Link>
       </div>
     </nav>
   );

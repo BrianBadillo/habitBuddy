@@ -96,8 +96,14 @@ export function PetClient({ initialPet }: Props) {
       {pet ? (
         <div className="space-y-4">
           <div className="rounded-xl border p-4 bg-white flex gap-4">
-            <div className="w-24 h-24 rounded-xl bg-slate-200 flex items-center justify-center text-4xl">
-              🐾
+            <div className="w-24 h-24 rounded-xl bg-slate-200 flex items-center justify-center overflow-hidden">
+              {pet.petType?.baseSpriteUrl && (
+                <img
+                  src={pet.petType.baseSpriteUrl}
+                  alt={pet.petType.name ?? 'Your pet'}
+                  className="w-full h-full object-contain"
+                />
+              )}
             </div>
             <div className="flex-1">
               <div className="flex justify-between items-start">

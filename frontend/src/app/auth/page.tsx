@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/apiClient';
 
 type Mode = 'login' | 'signup';
@@ -15,6 +16,8 @@ export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
 
   function resetMessages() {
     setMsg(null);
@@ -61,9 +64,13 @@ export default function AuthPage() {
 
         setMsg(`Signup request OK. User: ${result.user.username}`);
       }
+
+      // ✅ Navigate to dashboard after successful auth
+      if(mode === 'login'){
+        router.push('/dashboard');
+      }
     } catch (err: any) {
       console.error(err);
-      // err.message is always a string because apiFetch throws Error(...)
       setError(err.message ?? 'Network or API error.');
     } finally {
       setLoading(false);
