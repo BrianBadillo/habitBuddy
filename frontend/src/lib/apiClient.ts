@@ -86,6 +86,12 @@ export const api = {
     });
   },
 
+  authLogout() {
+    return apiFetch<{ ok: boolean }>('/api/auth/logout', {
+      method: 'POST',
+    });
+  },
+
   // -------- Profile / User --------
 
   getMe() {

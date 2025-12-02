@@ -2,7 +2,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { api } from '@/lib/apiClient';
+import type { User } from '@/types/api';
 
 const links = [
   { href: '/dashboard', label: 'Dashboard' },
@@ -13,6 +16,31 @@ const links = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const me = await api.getMe(); // [`api.getMe`](frontend/src/lib/apiClient.ts)
+        if (alive) setUser(me.user);
+      } catch {
+        if (alive) setUser(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  async function handleLogout() {
+    try {
+      await api.authLogout(); // [`api.authLogout`](frontend/src/lib/apiClient.ts)
+    } finally {
+      router.push('/auth');
+    }
+  }
 
   return (
     <nav className="flex items-center justify-between px-4 py-3 border-b bg-white/80 backdrop-blur">
@@ -36,6 +64,24 @@ export function Navbar() {
               </Link>
             );
           })}
+        </div>
+        
+        <div>
+          {user ? (
+            <button
+              onClick={handleLogout}
+              className="text-sm px-3 py-1 rounded-md bg-slate-800 text-white"
+            >
+              Log out
+            </button>
+          ) : (
+            <Link
+              href="/auth"
+              className="text-sm px-3 py-1 rounded-md bg-indigo-600 text-white"
+            >
+              Log in
+            </Link>
+          )}
         </div>
       </div>
     </nav>
