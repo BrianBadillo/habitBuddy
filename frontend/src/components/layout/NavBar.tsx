@@ -20,10 +20,16 @@ export function Navbar() {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
+    // Don't fetch user info on auth page
+    if (pathname.startsWith('/auth')) {
+      setUser(null);
+      return;
+    }
+
     let alive = true;
     (async () => {
       try {
-        const me = await api.getMe(); // [`api.getMe`](frontend/src/lib/apiClient.ts)
+        const me = await api.getMe();
         if (alive) setUser(me.user);
       } catch {
         if (alive) setUser(null);
@@ -32,7 +38,7 @@ export function Navbar() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [pathname]);
 
   async function handleLogout() {
     try {

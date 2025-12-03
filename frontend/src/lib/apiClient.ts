@@ -58,6 +58,27 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
   if (!res.ok) {
     const text = await res.text();
+    
+    // Handle 401 Unauthorized - redirect to auth page
+    if (res.status === 401) {
+      if (typeof window !== 'undefined') {
+        // Client-side: only redirect if not already on auth page
+        if (!window.location.pathname.startsWith('/auth')) {
+          window.location.href = '/auth';
+        }
+      } else {
+        // Server-side: only redirect if not already on auth page
+        const { headers } = await import('next/headers');
+        const headersList = await headers();
+        const pathname = headersList.get('x-pathname') || '';
+        
+        if (!pathname.startsWith('/auth')) {
+          const { redirect } = await import('next/navigation');
+          redirect('/auth');
+        }
+      }
+    }
+    
     throw new Error(`API ${path} failed: ${res.status} ${text}`);
   }
 
