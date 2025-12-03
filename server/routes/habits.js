@@ -354,6 +354,28 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         return res.status(400).json({ error: 'Habit already completed' });
     }
 
+    // Overwrite completion on the same day (ensure only one record per day)
+    const { data: existingCompletion, error: findCompletionError } = await supabase
+        .from(TABLES.HABIT_COMPLETIONS)
+        .select('id')
+        .eq('user_id', userId)
+        .eq('habit_id', habitId)
+        .eq('completed_date', completedDate)
+        .maybeSingle();
+
+    if (findCompletionError) {
+        return res.status(500).json({ error: 'Failed to check existing completion' });
+    }
+    if (existingCompletion) { // If a completion already exists for that date then remove it
+        const { error: deleteError } = await supabase
+            .from(TABLES.HABIT_COMPLETIONS)
+            .delete()
+            .eq('id', existingCompletion.id);
+        if (deleteError) {
+            return res.status(500).json({ error: 'Failed to overwrite existing completion' });
+        }
+    }
+
     // Create new completion entry
     const { data: newCompletion, error: insertError } = await supabase
         .from(TABLES.HABIT_COMPLETIONS)
