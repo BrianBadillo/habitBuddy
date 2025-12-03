@@ -60,13 +60,14 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error' })
 })
 
-// Daily Maintenance Job
+// Daily maintenance job to update streaks, habits, and pet moods
 async function dailyMaintenance() {
   console.log('[Daily Maintenance] Starting daily maintenance job...');
+
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const now = new Date(); // current date and time
+  const todayDay = now.getDay(); // 0 (Sun) to 6 (Sat)
+  const todayDate = now.getDate(); // 1 to 31
 
   try {
     // ========================================================================
@@ -77,58 +78,108 @@ async function dailyMaintenance() {
     // Fetch all active streaks
     const { data: streaks, error: streaksError } = await supabase
       .from(TABLES.STREAKS)
-      .select('id, habit_id, user_id, current_streak, last_completed_date')
-      .gt('current_streak', 0); // Only check habits with active streaks
+      .select(`
+        id, 
+        habit_id,
+        user_id,
+        current_streak,
+        last_completed_date,
+        habit:${TABLES.HABITS}!inner(frequency)
+      `)
+      .gt('current_streak', 0); // Only check habits with active streaks (greater than 0)
 
     if (streaksError) {
-      console.error('[Daily Maintenance] Error fetching streaks:', streaksError);
+      console.error('--- [Daily Maintenance] Error fetching streaks:', streaksError);
     } else if (streaks && streaks.length > 0) {
       // Check each streak to see if it should be reset
       for (const streak of streaks) {
         if (!streak.last_completed_date) continue;
 
         const lastDate = new Date(streak.last_completed_date);
-        const daysSinceCompletion = Math.floor((new Date(today) - lastDate) / (1000 * 60 * 60 * 24));
+        const frequency = streak.habit?.frequency;
+        let shouldReset = false;
 
-        // If more than 1 day has passed, reset the streak
-        if (daysSinceCompletion > 1) {
+        if (frequency == 'daily') {
+          // Daily: reset if more than 1 day has passed
+          const daysSinceCompletion = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+          if (daysSinceCompletion > 1) {
+            shouldReset = true;
+          }
+        } else if (frequency == 'weekly') {
+          // Weekly: reset only on Monday if habit wasn't completed in the past week (since last Monday)
+          if (todayDay === 1) { // Monday (week starts on Monday)
+            // Calculate last Monday (start of current week)
+            const lastMonday = new Date(now);
+            lastMonday.setDate(now.getDate() - 7); // Go back to last Monday
+            lastMonday.setHours(0, 0, 0, 0);
+            
+            // If last completion was before last Monday, reset the streak
+            if (lastDate < lastMonday) {
+              shouldReset = true;
+            }
+          }
+        } else if (frequency == 'monthly') {
+          // Monthly: reset only on the 1st if habit wasn't completed in the past month
+          if (todayDate === 1) {
+            // Calculate first day of last month
+            const firstOfLastMonth = new Date(now);
+            firstOfLastMonth.setMonth(now.getMonth() - 1);
+            firstOfLastMonth.setDate(1);
+            firstOfLastMonth.setHours(0, 0, 0, 0);
+            
+            // If last completion was before the 1st of last month, reset the streak
+            if (lastDate < firstOfLastMonth) {
+              shouldReset = true;
+            }
+          }
+        }
+
+        // Reset streak if needed
+        if (shouldReset) {
           const { error: updateError } = await supabase
             .from(TABLES.STREAKS)
             .update({ current_streak: 0 })
             .eq('id', streak.id);
 
           if (updateError) {
-            console.error(`[Daily Maintenance] Error resetting streak ${streak.id}:`, updateError);
+            console.error(`--- [Daily Maintenance] Error resetting streak ${streak.id}:`, updateError);
+          } else {
+            console.log(`--- [Daily Maintenance] Reset ${frequency} streak id=${streak.id} for habit_id=${streak.habit_id}, user_id=${streak.user_id}.`);
           }
         }
       }
     }
 
     // ========================================================================
-    // 2. Find all habits that are marked "is_active" = false and reactivate them if their frequency matches today
+    // 2. Reactivate habits based on their frequency
     // ========================================================================
     console.log('[Daily Maintenance] Reactivating habits based on frequency...');
 
     // Fetch all inactive habits
     const { data: inactiveHabits, error: inactiveHabitsError } = await supabase
       .from(TABLES.HABITS)
-      .select('id, user_id, frequency')
+      .select('id, user_id, name, frequency')
       .eq('is_active', false);
+    
     if (inactiveHabitsError) {
-      console.error('[Daily Maintenance] Error fetching inactive habits:', inactiveHabitsError);
+      console.error('--- [Daily Maintenance] Error fetching inactive habits:', inactiveHabitsError);
     } else if (inactiveHabits && inactiveHabits.length > 0) {
       for (const habit of inactiveHabits) {
         let shouldActivate = false;
+
+        console.log(todayDay);
+
         if (habit.frequency == 'daily') {
+          // Daily habits reactivate every day
           shouldActivate = true;
-        } else if (habit.frequency === 'weekly') {
-          const todayDay = new Date().getDay(); // 0 (Sun) to 6 (Sat)
-          if (todayDay == 0) { // Reactivate weekly habits on Sundays
+        } else if (habit.frequency == 'weekly') {
+          // Weekly habits reactivate on Monday (day 1)
+          if (todayDay === 1) {
             shouldActivate = true;
           }
         } else if (habit.frequency == 'monthly') {
-          const todayDate = new Date().getDate(); // 1 to 31
-          if (todayDate === 1) { // Reactivate monthly habits on the 1st
+          // Monthly: reactivate only on the 1st (start of month)
+          if (todayDate === 1) {
             shouldActivate = true;
           }
         }
@@ -140,7 +191,9 @@ async function dailyMaintenance() {
             .eq('id', habit.id);
 
           if (activateError) {
-            console.error(`[Daily Maintenance] Error reactivating habit ${habit.id}:`, activateError);
+            console.error(`--- [Daily Maintenance] Error reactivating habit ${habit.id}:`, activateError);
+          } else {
+            console.log(`--- [Daily Maintenance] Reactivating habit "${habit.name}", ${habit.frequency} habit (id=${habit.id}, user_id=${habit.user_id}).`);
           }
         }
       }
@@ -157,10 +210,16 @@ async function dailyMaintenance() {
       .select('id, mood, last_interaction_date');
 
     if (petsError) {
-      console.error('[Daily Maintenance] Error fetching pets:', petsError);
+      console.error('--- [Daily Maintenance] Error fetching pets:', petsError);
     } else if (pets && pets.length > 0) {
       for (const pet of pets) {
+        const oldMood = pet.mood;
         const newMood = PET_MOOD_DOWN[pet.mood] || pet.mood;
+
+        if (oldMood === newMood) {
+          // Mood is already at minimum, no change
+          continue;
+        }
 
         const { error: moodUpdateError } = await supabase
           .from(TABLES.PETS)
@@ -168,7 +227,9 @@ async function dailyMaintenance() {
           .eq('id', pet.id);
 
         if (moodUpdateError) {
-          console.error(`[Daily Maintenance] Error updating mood for pet ${pet.id}:`, moodUpdateError);
+          console.error(`--- [Daily Maintenance] Error updating mood for pet ${pet.id}:`, moodUpdateError);
+        } else {
+          console.log(`--- [Daily Maintenance] Updated pet ${pet.id} mood: ${oldMood} -> ${newMood}.`);
         }
       }
     }
