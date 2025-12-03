@@ -157,25 +157,11 @@ router.get('/me/summary', requireAuth, async (req, res) => {
         .eq('user_id', userId)
         .eq('is_active', true);
     
-    // Fetch total completions (sum of completed_count)
-    let totalCompletions = 0;
-    try {
-        const { data: completionsData, error: completionsError } = await supabase
-            .from(TABLES.HABIT_COMPLETIONS)
-            .select('completed_count')
-            .eq('user_id', userId);
-
-        if (completionsError) {
-            console.error('Error fetching completions:', completionsError);
-        } else if (Array.isArray(completionsData) && completionsData.length > 0) {
-            totalCompletions = completionsData.reduce(
-                (sum, record) => sum + (record.completed_count || 0),
-                0
-            );
-        }
-    } catch (err) {
-        console.error('Unexpected completions query error:', err);
-    }
+    // Fetch total completions (count of all completion records)
+    const { count: totalCompletions } = await supabase
+        .from(TABLES.HABIT_COMPLETIONS)
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', userId);
     
     // Fetch best streak
     const { data: bestStreakData } = await supabase

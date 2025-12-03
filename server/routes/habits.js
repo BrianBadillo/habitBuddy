@@ -352,35 +352,30 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     // Check if already completed today
     const { data: completionData, error: completionError } = await supabase
         .from(TABLES.HABIT_COMPLETIONS)
-        .select('id', 'completed_count')
+        .select('id')
         .eq('habit_id', habitId)
         .eq('user_id', userId)
         .eq('completed_date', completedDate)
         .maybeSingle();
 
-    let completionId;
+    // If already completed today, return error or skip
     if (completionData) {
-        // Already completed today, increment count
-        const { data: updatedCompletion, error: updateError } = await supabase
-            .from(TABLES.HABIT_COMPLETIONS)
-            .update({ completed_count: completionData.completed_count + 1 })
-            .eq('id', completionData.id)
-            .select('id, completed_count')
-            .single();
-        completionId = updatedCompletion?.id;
-    } else {
-        // New completion entry for today
-        const { data: newCompletion, error: insertError } = await supabase
-            .from(TABLES.HABIT_COMPLETIONS)
-            .insert({
-                user_id: userId,
-                habit_id: habitId,
-                completed_date: completedDate,
-                completed_count: 1
-            })
-            .select('id, completed_count')
-            .single();
-        completionId = newCompletion?.id;
+        return res.status(400).json({ error: 'Habit already completed for this date' });
+    }
+
+    // Create new completion entry
+    const { data: newCompletion, error: insertError } = await supabase
+        .from(TABLES.HABIT_COMPLETIONS)
+        .insert({
+            user_id: userId,
+            habit_id: habitId,
+            completed_date: completedDate
+        })
+        .select('id')
+        .single();
+    
+    if (insertError || !newCompletion) {
+        return res.status(500).json({ error: 'Failed to record completion' });
     }
 
     // Update streak
@@ -503,12 +498,12 @@ GET /api/habits/7f664e4a-64b6-42bb-bf51-91f44e6c1111/history?from=2025-11-20&to=
 
 Example response:
 [
-  { "completionId": 15, "completedDate": "2025-11-22", "completedCount": 1 },
-  { "completionId": 16, "completedDate": "2025-11-23", "completedCount": 1 },
-  { "completionId": 17, "completedDate": "2025-11-24", "completedCount": 1 },
-  { "completionId": 18, "completedDate": "2025-11-25", "completedCount": 1 },
-  { "completionId": 19, "completedDate": "2025-11-26", "completedCount": 1 },
-  { "completionId": 20, "completedDate": "2025-11-27", "completedCount": 1 }
+  { "completionId": 15, "completedDate": "2025-11-22" },
+  { "completionId": 16, "completedDate": "2025-11-23" },
+  { "completionId": 17, "completedDate": "2025-11-24" },
+  { "completionId": 18, "completedDate": "2025-11-25" },
+  { "completionId": 19, "completedDate": "2025-11-26" },
+  { "completionId": 20, "completedDate": "2025-11-27" }
 ]*/
 router.get('/:habitId/history', requireAuth, async (req, res) => {
     const userId = req.user.id;
@@ -523,7 +518,7 @@ router.get('/:habitId/history', requireAuth, async (req, res) => {
     // Fetch completion history
     const { data, error } = await supabase
         .from(TABLES.HABIT_COMPLETIONS)
-        .select('id, completed_date, completed_count')
+        .select('id, completed_date')
         .eq('habit_id', habitId)
         .eq('user_id', userId)
         .gte('completed_date', from)
@@ -536,8 +531,7 @@ router.get('/:habitId/history', requireAuth, async (req, res) => {
     // Format response
     const history = data.map(entry => ({
         completionId: entry.id,
-        completedDate: entry.completed_date,
-        completedCount: entry.completed_count
+        completedDate: entry.completed_date
     }));
 
     res.json(history);
