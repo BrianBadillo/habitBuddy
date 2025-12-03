@@ -22,10 +22,10 @@ export function PetSummaryCard({ pet }: Props) {
     <div className="rounded-xl border p-4 bg-white flex gap-4">
       {/* Placeholder avatar */}
       <div className="w-20 h-20 rounded-xl bg-slate-200 flex items-center justify-center text-3xl">
-        {pet.petType?.baseSpriteUrl && (
+        {(pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl) && (
                 <img
-                  src={pet.petType.baseSpriteUrl}
-                  alt={pet.petType.name ?? 'Your pet'}
+                  src={pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl}
+                  alt={pet.petType?.name ?? 'Your pet'}
                   className="w-full h-full object-contain"
                 />
               )}

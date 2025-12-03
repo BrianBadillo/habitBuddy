@@ -97,10 +97,10 @@ export function PetClient({ initialPet }: Props) {
         <div className="space-y-4">
           <div className="rounded-xl border p-4 bg-white flex gap-4">
             <div className="w-24 h-24 rounded-xl bg-slate-200 flex items-center justify-center overflow-hidden">
-              {pet.petType?.baseSpriteUrl && (
+              {(pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl) && (
                 <img
-                  src={pet.petType.baseSpriteUrl}
-                  alt={pet.petType.name ?? 'Your pet'}
+                  src={(pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl) ?? undefined}
+                  alt={pet.petType?.name ?? 'Your pet'}
                   className="w-full h-full object-contain"
                 />
               )}
