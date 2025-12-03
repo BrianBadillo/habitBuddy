@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { api } from '@/lib/apiClient';
 import { Habit, HabitCompletion, Streak } from '@/types/api';
 
+import { useRouter } from 'next/navigation';
+
 interface Props {
   habit: Habit;
   history: HabitCompletion[];
@@ -19,6 +21,7 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   async function handleCheckIn() {
     setError(null);
@@ -45,6 +48,7 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
       }
 
       setMsg('Check-in recorded!');
+      router.push('/dashboard'); // redirect after successful check-in
     } catch (err: any) {
       setError(err.message ?? 'Failed to check in.');
     } finally {
