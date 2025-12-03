@@ -99,8 +99,6 @@ async function dailyMaintenance() {
 
           if (updateError) {
             console.error(`[Daily Maintenance] Error resetting streak ${streak.id}:`, updateError);
-          } else {
-            console.log(`[Daily Maintenance] Reset streak for habit ${streak.habit_id} (${daysSinceCompletion} days missed)`);
           }
         }
       }
@@ -121,14 +119,14 @@ async function dailyMaintenance() {
     } else if (inactiveHabits && inactiveHabits.length > 0) {
       for (const habit of inactiveHabits) {
         let shouldActivate = false;
-        if (habit.frequency === 'Daily') {
+        if (habit.frequency == 'daily') {
           shouldActivate = true;
-        } else if (habit.frequency === 'Weekly') {
+        } else if (habit.frequency === 'weekly') {
           const todayDay = new Date().getDay(); // 0 (Sun) to 6 (Sat)
-          if (todayDay === 0) { // Reactivate weekly habits on Sundays
+          if (todayDay == 0) { // Reactivate weekly habits on Sundays
             shouldActivate = true;
           }
-        } else if (habit.frequency === 'Monthly') {
+        } else if (habit.frequency == 'monthly') {
           const todayDate = new Date().getDate(); // 1 to 31
           if (todayDate === 1) { // Reactivate monthly habits on the 1st
             shouldActivate = true;
@@ -143,9 +141,6 @@ async function dailyMaintenance() {
 
           if (activateError) {
             console.error(`[Daily Maintenance] Error reactivating habit ${habit.id}:`, activateError);
-          }
-          else {
-            console.log(`[Daily Maintenance] Reactivated habit ${habit.id} based on frequency ${habit.frequency}`);
           }
         }
       }
@@ -174,8 +169,6 @@ async function dailyMaintenance() {
 
         if (moodUpdateError) {
           console.error(`[Daily Maintenance] Error updating mood for pet ${pet.id}:`, moodUpdateError);
-        } else {
-          console.log(`[Daily Maintenance] Updated mood for pet ${pet.id} from ${pet.mood} to ${newMood}`);
         }
       }
     }
