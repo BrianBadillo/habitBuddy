@@ -349,18 +349,9 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         return res.status(404).json({ error: 'Habit not found' });
     }
 
-    // Check if already completed today
-    const { data: completionData, error: completionError } = await supabase
-        .from(TABLES.HABIT_COMPLETIONS)
-        .select('id')
-        .eq('habit_id', habitId)
-        .eq('user_id', userId)
-        .eq('completed_date', completedDate)
-        .maybeSingle();
-
-    // If already completed today, return error or skip
-    if (completionData) {
-        return res.status(400).json({ error: 'Habit already completed for this date' });
+    // Check if habit is already inactive (completed)
+    if (!habitData.is_active) {
+        return res.status(400).json({ error: 'Habit already completed' });
     }
 
     // Create new completion entry
@@ -376,6 +367,17 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     
     if (insertError || !newCompletion) {
         return res.status(500).json({ error: 'Failed to record completion' });
+    }
+
+    // Set habit to inactive after check-in
+    const { error: habitUpdateError } = await supabase
+        .from(TABLES.HABITS)
+        .update({ is_active: false })
+        .eq('id', habitId)
+        .eq('user_id', userId);
+    
+    if (habitUpdateError) {
+        return res.status(500).json({ error: 'Failed to update habit status' });
     }
 
     // Update streak
@@ -470,7 +472,7 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         id: habitData.id,
         name: habitData.name,
         frequency: habitData.frequency,
-        isActive: habitData.is_active,
+        isActive: false,
         difficulty: habitData.difficulty
     };
 
