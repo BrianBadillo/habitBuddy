@@ -11,6 +11,7 @@ import meRouter from './routes/me.js'
 import habitRouter from './routes/habits.js'
 import petRouter from './routes/pets.js'
 import quoteRouter from './routes/quote.js'
+import friendRouter from './routes/friends.js'
 
 // create the app
 const app = express()
@@ -36,6 +37,8 @@ app.use('/api/habits', habitRouter);
 app.use('/api/pet', petRouter);
 // mount quote routes
 app.use('/api/quote', quoteRouter);
+// mount friends routes
+app.use('/api/friends', friendRouter);
 
 // base route
 app.get('/', (_req, res) => {
