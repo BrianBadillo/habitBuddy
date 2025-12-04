@@ -502,26 +502,20 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     // Update pet XP and mood
     let newXp = petData.xp + xpGained;
     let newLevel = petData.level;
+    let newStageId = petData.current_stage_id;
+    const maxLevel = Math.max(...Object.keys(PET_LEVELS).map(Number));
     // Check for level up
-    while (newLevel < Object.keys(PET_LEVELS).length && newXp >= PET_LEVELS[newLevel + 1]) {
+    while (newLevel < maxLevel && newXp >= PET_LEVELS[newLevel + 1]) {
         newLevel += 1; // level up
-        // Increment the pet's current stage (same pet_type, and stage_number = newLevel):
-        // Get the new stage ID (if next stage up doesn't exist, stay at current stage)
+        // Find the stage for this level; defer the DB update to the final pet update
         const { data: nextStageData, error: nextStageError } = await supabase
             .from(TABLES.EVOLUTION_STAGES)
             .select('id')
             .eq('pet_type_id', petData.pet_type_id)
             .eq('stage_number', newLevel)
-            .single();
+            .maybeSingle();
         if (!nextStageError && nextStageData) {
-            // Update pet's current stage ID
-            const { error: updateStageError } = await supabase
-                .from(TABLES.PETS)
-                .update({ current_stage_id: nextStageData.id })
-                .eq('id', petData.id);
-            if (updateStageError) {
-                return res.status(500).json({ error: 'Failed to update pet stage on level up' });
-            }
+            newStageId = nextStageData.id;
         }
     }
     // Update mood positively
@@ -533,10 +527,11 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         .update({
             level: newLevel,
             xp: newXp,
-            mood: newMood
+            mood: newMood,
+            current_stage_id: newStageId
         })
         .eq('id', petData.id)
-        .select('id, name, level, xp, mood')
+        .select('id, name, level, xp, mood, current_stage_id')
         .single();
     if (updatePetError || !updatedPet) {
         return res.status(500).json({ error: 'Failed to update pet data' });
