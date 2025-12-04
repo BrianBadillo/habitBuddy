@@ -424,9 +424,9 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
         const day = d.getUTCDay(); // 0 (Sun) to 6 (Sat)
         const diff = (day === 0 ? -6 : 1 - day); // move to Monday
-        dt.setUTCDate(dt.getUTCDate() + diff);
-        dt.setUTCHours(0, 0, 0, 0);
-        return dt;
+        d.setUTCDate(d.getUTCDate() + diff);
+        d.setUTCHours(0, 0, 0, 0);
+        return d;
     }
     function monthsDiffUTC(a, b) {
         // a - b in whole months

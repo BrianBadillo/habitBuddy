@@ -25,7 +25,7 @@ router.get('/xp', requireAuth, async (req, res) => {
 
     try {
         // Fetch accepted friendships involving the user
-        const { data: friendships, error: friendshipsError } = await supabase
+        const { data: friendships, error: friendsError } = await supabase
             .from(TABLES.FRIENDS)
             .select('requester_id, addressee_id, status')
             .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
@@ -41,6 +41,7 @@ router.get('/xp', requireAuth, async (req, res) => {
             participantIds.add(f.requester_id);
             participantIds.add(f.addressee_id);
         });
+        const ids = Array.from(participantIds);
 
         // Fetch profiles for usernames
         const { data: profiles, error: profilesError } = await supabase
@@ -109,7 +110,7 @@ router.get('/streaks', requireAuth, async (req, res) => {
 
     try {
         // Fetch accepted friendships involving the user
-        const { data: friendships, error: friendshipsError } = await supabase
+        const { data: friendships, error: friendsError } = await supabase
             .from(TABLES.FRIENDS)
             .select('requester_id, addressee_id, status')
             .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
@@ -125,6 +126,7 @@ router.get('/streaks', requireAuth, async (req, res) => {
             participantIds.add(f.requester_id);
             participantIds.add(f.addressee_id);
         });
+        const ids = Array.from(participantIds);
 
         // Fetch profiles for usernames
         const { data: profiles, error: profilesError } = await supabase

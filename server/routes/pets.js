@@ -168,8 +168,8 @@ router.post('/ping', requireAuth, async (req, res) => {
             level,
             mood,
             last_interaction_date,
-            pet_type:pet_types ( id, name, base_sprite_url ),
-            current_stage:evolution_stages ( id, stage_number, name, sprite_url )
+            pet_type:pet_type_id ( id, name, base_sprite_url ),
+            current_stage:current_stage_id ( id, stage_number, name, sprite_url )
         `)
         .single();
 
