@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { requireAuth } from '../middleware/auth.js'
 import { TABLES } from '../db/tables.js'
-import { FREQUENCY, DIFFICULTY, PET_MOOD_UP, PET_MOOD_DOWN, PET_LEVELS, XP_MAP } from '../constants.js'
+import { FREQUENCY, DIFFICULTY, PET_MOOD_UP, PET_LEVELS, XP_MAP } from '../constants.js'
 
 // Create a router for habit-related routes
 const router = Router()
@@ -32,12 +32,21 @@ Example response:
 ]*/
 router.get('/', requireAuth, async (req, res) => {
     const userId = req.user.id;
+    const { active } = req.query;
 
-    const { data, error } = await supabase
+    let query = supabase
         .from(TABLES.HABITS)
         .select('id, name, description, frequency, is_active, difficulty, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+        .eq('user_id', userId);
+
+    // Filter by active status if query parameter is provided
+    if (active !== undefined) {
+        const isActive = active === 'true';
+        query = query.eq('is_active', isActive);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+
     if (error) {
         return res.status(500).json({ error: error.message });
     }
@@ -340,38 +349,57 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         return res.status(404).json({ error: 'Habit not found' });
     }
 
-    // Check if already completed today
-    const { data: completionData, error: completionError } = await supabase
+    // Check if habit is already inactive (completed)
+    if (!habitData.is_active) {
+        return res.status(400).json({ error: 'Habit already completed' });
+    }
+
+    // Overwrite completion on the same day (ensure only one record per day)
+    const { data: existingCompletion, error: findCompletionError } = await supabase
         .from(TABLES.HABIT_COMPLETIONS)
-        .select('id', 'completed_count')
-        .eq('habit_id', habitId)
+        .select('id')
         .eq('user_id', userId)
+        .eq('habit_id', habitId)
         .eq('completed_date', completedDate)
         .maybeSingle();
 
-    let completionId;
-    if (completionData) {
-        // Already completed today, increment count
-        const { data: updatedCompletion, error: updateError } = await supabase
+    if (findCompletionError) {
+        return res.status(500).json({ error: 'Failed to check existing completion' });
+    }
+    if (existingCompletion) { // If a completion already exists for that date then remove it
+        const { error: deleteError } = await supabase
             .from(TABLES.HABIT_COMPLETIONS)
-            .update({ completed_count: completionData.completed_count + 1 })
-            .eq('id', completionData.id)
-            .select('id, completed_count')
-            .single();
-        completionId = updatedCompletion?.id;
-    } else {
-        // New completion entry for today
-        const { data: newCompletion, error: insertError } = await supabase
-            .from(TABLES.HABIT_COMPLETIONS)
-            .insert({
-                user_id: userId,
-                habit_id: habitId,
-                completed_date: completedDate,
-                completed_count: 1
-            })
-            .select('id, completed_count')
-            .single();
-        completionId = newCompletion?.id;
+            .delete()
+            .eq('id', existingCompletion.id);
+        if (deleteError) {
+            return res.status(500).json({ error: 'Failed to overwrite existing completion' });
+        }
+    }
+
+    // Create new completion entry
+    const { data: newCompletion, error: insertError } = await supabase
+        .from(TABLES.HABIT_COMPLETIONS)
+        .insert({
+            user_id: userId,
+            habit_id: habitId,
+            completed_date: completedDate
+        })
+        .select('id')
+        .single();
+    
+    if (insertError || !newCompletion) {
+        return res.status(500).json({ error: 'Failed to record completion' });
+    }
+
+    // Set habit to inactive after check-in
+    const { error: habitUpdateError } = await supabase
+        .from(TABLES.HABITS)
+        .update({ is_active: false })
+        .eq('id', habitId)
+        .eq('user_id', userId);
+    
+    if (habitUpdateError) {
+        return res.status(500).json({ error: 'Failed to update habit status' });
     }
 
     // Update streak
@@ -390,23 +418,58 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     
     const lastDate = streakData.last_completed_date ? new Date(streakData.last_completed_date) : null;
     const completedDt = new Date(completedDate);
-    const oneDay = 24 * 60 * 60 * 1000;
-    if (lastDate) {
-        const diffDays = Math.floor((completedDt - lastDate) / oneDay);
-        if (diffDays === 1) {
-            // Consecutive day
-            newCurrentStreak += 1;
-        } else if (diffDays > 1) {
-            // Missed days
-            newCurrentStreak = 1;
-        }
-    } else {
+
+    // Helpers for date difference
+    function startOfWeekUTC(date) {
+        const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+        const day = d.getUTCDay(); // 0 (Sun) to 6 (Sat)
+        const diff = (day === 0 ? -6 : 1 - day); // move to Monday
+        d.setUTCDate(d.getUTCDate() + diff);
+        d.setUTCHours(0, 0, 0, 0);
+        return d;
+    }
+    function monthsDiffUTC(a, b) {
+        // a - b in whole months
+        return (a.getUTCFullYear() - b.getUTCFullYear()) * 12 + (a.getUTCMonth() - b.getUTCMonth());
+    }
+
+    if (!lastDate) {
         // First ever completion
         newCurrentStreak = 1;
+    } else {
+        if (habitData.frequency === FREQUENCY.DAILY) {
+            const oneDay = 24 * 60 * 60 * 1000;
+            const diffDays = Math.floor((completedDt - lastDate) / oneDay);
+            if (diffDays === 1) {
+                newCurrentStreak += 1; // next day
+            } else if (diffDays > 1) {
+                newCurrentStreak = 1; // missed one or more days
+            }
+        } else if (habitData.frequency === FREQUENCY.WEEKLY) {
+            const lastWeek = startOfWeekUTC(lastDate);
+            const thisWeek = startOfWeekUTC(completedDt);
+            const weekDiff = Math.round((thisWeek - lastWeek) / (7 * 24 * 60 * 60 * 1000));
+            if (weekDiff === 1) {
+                newCurrentStreak += 1; // consecutive week
+            } else if (weekDiff > 1) {
+                newCurrentStreak = 1; // missed one or more full weeks
+            }
+        } else if (habitData.frequency === FREQUENCY.MONTHLY) {
+            const mDiff = monthsDiffUTC(completedDt, lastDate);
+            if (mDiff === 1) {
+                newCurrentStreak += 1; // consecutive month
+            } else if (mDiff > 1) {
+                newCurrentStreak = 1; // missed one or more full months
+            }
+        } else {
+            console.log('--- Unknown frequency type for habit:', habitData.frequency);
+        }
     }
-    if (newCurrentStreak > newLongestStreak) { // Update longest streak if needed
+
+    if (newCurrentStreak > newLongestStreak) {
         newLongestStreak = newCurrentStreak;
     }
+
     // Update streak in DB
     const { data: updatedStreak, error: updateStreakError } = await supabase
         .from(TABLES.STREAKS)
@@ -429,7 +492,7 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     // Fetch user's pet
     const { data: petData, error: petError } = await supabase
         .from(TABLES.PETS)
-        .select('id, name, level, xp, mood')
+        .select('id, name, level, xp, mood, current_stage_id, pet_type_id')
         .eq('user_id', userId)
         .single();
     if (petError || !petData) {
@@ -441,7 +504,25 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     let newLevel = petData.level;
     // Check for level up
     while (newLevel < Object.keys(PET_LEVELS).length && newXp >= PET_LEVELS[newLevel + 1]) {
-        newLevel += 1;
+        newLevel += 1; // level up
+        // Increment the pet's current stage (same pet_type, and stage_number = newLevel):
+        // Get the new stage ID (if next stage up doesn't exist, stay at current stage)
+        const { data: nextStageData, error: nextStageError } = await supabase
+            .from(TABLES.EVOLUTION_STAGES)
+            .select('id')
+            .eq('pet_type_id', petData.pet_type_id)
+            .eq('stage_number', newLevel)
+            .single();
+        if (!nextStageError && nextStageData) {
+            // Update pet's current stage ID
+            const { error: updateStageError } = await supabase
+                .from(TABLES.PETS)
+                .update({ current_stage_id: nextStageData.id })
+                .eq('id', petData.id);
+            if (updateStageError) {
+                return res.status(500).json({ error: 'Failed to update pet stage on level up' });
+            }
+        }
     }
     // Update mood positively
     const newMood = PET_MOOD_UP[petData.mood] || petData.mood;
@@ -466,7 +547,7 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
         id: habitData.id,
         name: habitData.name,
         frequency: habitData.frequency,
-        isActive: habitData.is_active,
+        isActive: false,
         difficulty: habitData.difficulty
     };
 
@@ -494,12 +575,12 @@ GET /api/habits/7f664e4a-64b6-42bb-bf51-91f44e6c1111/history?from=2025-11-20&to=
 
 Example response:
 [
-  { "completionId": 15, "completedDate": "2025-11-22", "completedCount": 1 },
-  { "completionId": 16, "completedDate": "2025-11-23", "completedCount": 1 },
-  { "completionId": 17, "completedDate": "2025-11-24", "completedCount": 1 },
-  { "completionId": 18, "completedDate": "2025-11-25", "completedCount": 1 },
-  { "completionId": 19, "completedDate": "2025-11-26", "completedCount": 1 },
-  { "completionId": 20, "completedDate": "2025-11-27", "completedCount": 1 }
+  { "completionId": 15, "completedDate": "2025-11-22" },
+  { "completionId": 16, "completedDate": "2025-11-23" },
+  { "completionId": 17, "completedDate": "2025-11-24" },
+  { "completionId": 18, "completedDate": "2025-11-25" },
+  { "completionId": 19, "completedDate": "2025-11-26" },
+  { "completionId": 20, "completedDate": "2025-11-27" }
 ]*/
 router.get('/:habitId/history', requireAuth, async (req, res) => {
     const userId = req.user.id;
@@ -514,7 +595,7 @@ router.get('/:habitId/history', requireAuth, async (req, res) => {
     // Fetch completion history
     const { data, error } = await supabase
         .from(TABLES.HABIT_COMPLETIONS)
-        .select('id, completed_date, completed_count')
+        .select('id, completed_date')
         .eq('habit_id', habitId)
         .eq('user_id', userId)
         .gte('completed_date', from)
@@ -527,8 +608,7 @@ router.get('/:habitId/history', requireAuth, async (req, res) => {
     // Format response
     const history = data.map(entry => ({
         completionId: entry.id,
-        completedDate: entry.completed_date,
-        completedCount: entry.completed_count
+        completedDate: entry.completed_date
     }));
 
     res.json(history);
