@@ -30,7 +30,7 @@ export default async function FriendsPage() {
           {friends.map((f) => (
             <li
               key={f.id}
-              className="rounded-lg border bg-white px-3 py-2 flex items-center justify-between"
+              className="rounded-lg border bg-white text-slate-900 px-3 py-2 flex items-center justify-between"
             >
               <div>
                 <div className="font-medium">

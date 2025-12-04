@@ -85,13 +85,13 @@ export default function AuthPage() {
       </p>
 
       {/* Tabs */}
-      <div className="flex rounded-xl border bg-white overflow-hidden text-sm">
+      <div className="flex rounded-xl border bg-white text-slate-900 overflow-hidden text-sm">
         <button
           type="button"
-          className={`flex-1 px-4 py-2 text-center ${
+          className={`flex-1 px-4 py-2 text-center transition-colors ${
             mode === 'login'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white text-slate-700'
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800'
+              : 'bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100'
           }`}
           onClick={() => {
             resetMessages();
@@ -102,10 +102,10 @@ export default function AuthPage() {
         </button>
         <button
           type="button"
-          className={`flex-1 px-4 py-2 text-center ${
+          className={`flex-1 px-4 py-2 text-center transition-colors ${
             mode === 'signup'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-white text-slate-700'
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800'
+              : 'bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100'
           }`}
           onClick={() => {
             resetMessages();
@@ -119,7 +119,7 @@ export default function AuthPage() {
       {/* Form */}
       <form
         onSubmit={handleSubmit}
-        className="rounded-xl border bg-white p-4 space-y-3 text-sm"
+        className="rounded-xl border bg-white text-slate-900 p-4 space-y-3 text-sm"
       >
         {mode === 'signup' && (
           <label className="flex flex-col gap-1">
@@ -171,7 +171,7 @@ export default function AuthPage() {
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 w-full inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 disabled:opacity-60"
+          className="mt-2 w-full inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading
             ? mode === 'login'

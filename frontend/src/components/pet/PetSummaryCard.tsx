@@ -9,7 +9,7 @@ interface Props {
 export function PetSummaryCard({ pet }: Props) {
   if (!pet) {
     return (
-      <div className="rounded-xl border p-4 bg-white">
+      <div className="rounded-xl border p-4 bg-white text-slate-900">
         <h2 className="font-semibold mb-1">Your Pet</h2>
         <p className="text-sm text-slate-600">
           You don&apos;t have a pet yet. Complete onboarding to adopt one!
@@ -19,7 +19,7 @@ export function PetSummaryCard({ pet }: Props) {
   }
 
   return (
-    <div className="rounded-xl border p-4 bg-white flex gap-4">
+    <div className="rounded-xl border p-4 bg-white text-slate-900 flex gap-4">
       {/* Placeholder avatar */}
       <div className="w-20 h-20 rounded-xl bg-slate-200 flex items-center justify-center text-3xl">
         {(pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl) && (

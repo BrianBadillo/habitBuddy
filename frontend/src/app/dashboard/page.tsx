@@ -18,7 +18,7 @@ export default async function DashboardPage() {
       <div className="grid md:grid-cols-2 gap-4">
         <PetSummaryCard pet={me.pet ?? undefined} />
 
-        <div className="rounded-xl border p-4 bg-white flex flex-col justify-between">
+        <div className="rounded-xl border p-4 bg-white text-slate-900 flex flex-col justify-between">
           <div>
             <h2 className="font-semibold mb-2">Overview</h2>
             <ul className="text-sm space-y-1">
@@ -36,7 +36,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Quote */}
-      <div className="rounded-xl border p-4 bg-gradient-to-r from-indigo-50 to-sky-50">
+      <div className="rounded-xl border p-4 bg-gradient-to-r from-indigo-50 to-sky-50 text-slate-900">
         <p className="text-sm italic">&ldquo;{quote.text}&rdquo;</p>
         <p className="text-xs mt-1 text-right text-slate-600">
           — {quote.author}

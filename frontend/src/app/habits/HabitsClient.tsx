@@ -90,7 +90,7 @@ export function HabitsClient({ initialHabits }: Props) {
       {/* Create form */}
       <form
         onSubmit={handleCreateHabit}
-        className="rounded-xl border bg-white p-4 space-y-3"
+        className="rounded-xl border bg-white text-slate-900 p-4 space-y-3"
       >
         <h2 className="font-semibold text-sm">Create a new habit</h2>
 
@@ -111,6 +111,7 @@ export function HabitsClient({ initialHabits }: Props) {
               className="border rounded-md px-2 py-1 text-sm"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="A brief description of the habit"
             />
           </label>
 
@@ -152,7 +153,7 @@ export function HabitsClient({ initialHabits }: Props) {
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 disabled:opacity-60"
+          className="mt-2 inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {submitting ? 'Creating...' : 'Create habit'}
         </button>

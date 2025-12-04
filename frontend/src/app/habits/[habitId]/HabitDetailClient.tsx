@@ -90,7 +90,7 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
         <p className="text-sm text-slate-700">{habitState.description}</p>
       )}
 
-      <div className="rounded-xl border bg-white p-4 flex flex-col gap-2 text-sm">
+      <div className="rounded-xl border bg-white text-slate-900 p-4 flex flex-col gap-2 text-sm">
         <div>
           <span className="font-semibold">Frequency:</span>{' '}
           {habitState.frequency.toUpperCase()} · Difficulty:{' '}
@@ -120,7 +120,7 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
         )}
 
         <button
-          className="mt-3 inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 disabled:opacity-60"
+          className="mt-3 inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           disabled={loading}
           onClick={handleCheckIn}
         >

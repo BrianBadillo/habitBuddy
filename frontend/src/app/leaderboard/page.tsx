@@ -40,7 +40,7 @@ export default async function LeaderboardPage() {
             {xpLeaderboard.map((entry) => (
               <li
                 key={entry.rank}
-                className="rounded-lg border bg-white px-3 py-2 flex items-center justify-between"
+                className="rounded-lg border bg-white text-slate-900 px-3 py-2 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-6 text-center font-semibold">
@@ -78,7 +78,7 @@ export default async function LeaderboardPage() {
             {streakLeaderboard.map((entry) => (
               <li
                 key={entry.rank}
-                className="rounded-lg border bg-white px-3 py-2 flex items-center justify-between"
+                className="rounded-lg border bg-white text-slate-900 px-3 py-2 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-6 text-center font-semibold">

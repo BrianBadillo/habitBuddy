@@ -1,5 +1,7 @@
-import Link from 'next/link';
+'use client';
+
 import { Habit } from '@/types/api';
+import { useRouter } from 'next/navigation';
 
 interface Props {
   habits: Habit[];
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export function HabitList({ habits, onCheckIn, onDelete }: Props) {
+  const router = useRouter();
+
   if (!habits.length) {
     return (
       <p className="text-sm text-slate-600">
@@ -33,7 +37,7 @@ export function HabitList({ habits, onCheckIn, onDelete }: Props) {
       {habits.map((h) => (
         <li
           key={h.id}
-          className="rounded-lg border bg-white px-3 py-2 flex items-center justify-between"
+          className="rounded-lg border bg-white text-slate-900 px-3 py-2 flex items-center justify-between"
         >
           <div>
             <div className="font-medium">{h.name}</div>
@@ -48,23 +52,23 @@ export function HabitList({ habits, onCheckIn, onDelete }: Props) {
           <div className="flex items-center gap-2">
             {onCheckIn && (
               <button
-                className="text-xs px-2 py-1 rounded-md bg-emerald-600 text-white"
+                className="text-xs px-2 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
                 onClick={() => handleConfirmCheckIn(h.id)}
               >
                 Check in
               </button>
             )}
 
-            <Link
-              href={`/habits/${h.id}`}
-              className="text-xs px-2 py-1 rounded-md bg-indigo-600 text-white"
+            <button
+              className="text-xs px-2 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 transition-colors"
+              onClick={() => router.push(`/habits/${h.id}`)}
             >
               View
-            </Link>
+            </button>
 
             {onDelete && (
               <button
-                className="text-xs px-2 py-1 rounded-md bg-red-100 text-red-700"
+                className="text-xs px-2 py-1 rounded-md bg-red-500 text-white hover:bg-red-600 active:bg-red-700 transition-colors"
                 onClick={() => handleConfirmDelete(h.id)}
               >
                 Delete

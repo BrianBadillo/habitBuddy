@@ -49,7 +49,7 @@ export function Navbar() {
   }
 
   return (
-    <nav className="flex items-center justify-between px-4 py-3 border-b bg-white/80 backdrop-blur">
+    <nav className="flex items-center justify-between px-4 py-3 border-b bg-white/80 backdrop-blur text-slate-900">
       <div className="font-bold text-lg">HabitBuddy</div>
 
       <div className="flex items-center gap-4">
@@ -60,10 +60,10 @@ export function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-2 py-1 rounded-md ${
+                className={`px-2 py-1 rounded-md transition-colors ${
                   active
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
+                    ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800'
+                    : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
                 }`}
               >
                 {link.label}
@@ -76,17 +76,17 @@ export function Navbar() {
           {user ? (
             <button
               onClick={handleLogout}
-              className="text-sm px-3 py-1 rounded-md bg-slate-800 text-white"
+              className="text-sm px-3 py-1 rounded-md bg-slate-700 text-white hover:bg-slate-800 active:bg-slate-900 transition-colors"
             >
               Log out
             </button>
           ) : (
-            <Link
-              href="/auth"
-              className="text-sm px-3 py-1 rounded-md bg-indigo-600 text-white"
+            <button
+              onClick={() => router.push('/auth')}
+              className="text-sm px-3 py-1 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 transition-colors"
             >
               Log in
-            </Link>
+            </button>
           )}
         </div>
       </div>
