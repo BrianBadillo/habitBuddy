@@ -1,4 +1,5 @@
 import { supabase } from '../db/supabaseClient.js'
+import { TABLES } from '../db/tables.js'
 
 // Middleware to verify access token from HttpOnly cookie
 export async function requireAuth(req, res, next) {
@@ -22,6 +23,27 @@ export async function requireAuth(req, res, next) {
         next();
     } catch (err) {
         console.error('Auth middleware error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+export async function requireAdmin(req, res, next) {
+    try {
+        // First ensure the user is authenticated
+        await requireAuth(req, res, async () => {
+            // Then check admin role
+            const { data: profileData, error: profileError } = await supabase
+                .from(TABLES.PROFILES)
+                .select('role')
+                .eq('id', req.user.id)
+                .single();
+            if (profileError || !profileData || profileData.role !== 'admin') {
+                return res.status(403).json({ error: 'Forbidden: Admins only' });
+            }
+            next();
+        });
+    } catch (err) {
+        console.error('Admin middleware error:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 }
