@@ -12,6 +12,7 @@ import habitRouter from './routes/habits.js'
 import petRouter from './routes/pets.js'
 import quoteRouter from './routes/quote.js'
 import friendRouter from './routes/friends.js'
+import leaderboardRouter from './routes/leaderboard.js'
 
 // create the app
 const app = express()
@@ -39,6 +40,8 @@ app.use('/api/pet', petRouter);
 app.use('/api/quote', quoteRouter);
 // mount friends routes
 app.use('/api/friends', friendRouter);
+// mount leaderboard routes
+app.use('/api/leaderboard', leaderboardRouter);
 
 // base route
 app.get('/', (_req, res) => {
