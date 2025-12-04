@@ -2,7 +2,7 @@ import { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { requireAuth } from '../middleware/auth.js'
 import { TABLES } from '../db/tables.js'
-import { FREQUENCY, DIFFICULTY, PET_MOOD_UP, PET_MOOD_DOWN, PET_LEVELS, XP_MAP } from '../constants.js'
+import { FREQUENCY, DIFFICULTY, PET_MOOD_UP, PET_LEVELS, XP_MAP } from '../constants.js'
 
 // Create a router for habit-related routes
 const router = Router()
@@ -418,23 +418,58 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     
     const lastDate = streakData.last_completed_date ? new Date(streakData.last_completed_date) : null;
     const completedDt = new Date(completedDate);
-    const oneDay = 24 * 60 * 60 * 1000;
-    if (lastDate) {
-        const diffDays = Math.floor((completedDt - lastDate) / oneDay);
-        if (diffDays === 1) {
-            // Consecutive day
-            newCurrentStreak += 1;
-        } else if (diffDays > 1) {
-            // Missed days
-            newCurrentStreak = 1;
-        }
-    } else {
+
+    // Helpers for date difference
+    function startOfWeekUTC(date) {
+        const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+        const day = d.getUTCDay(); // 0 (Sun) to 6 (Sat)
+        const diff = (day === 0 ? -6 : 1 - day); // move to Monday
+        dt.setUTCDate(dt.getUTCDate() + diff);
+        dt.setUTCHours(0, 0, 0, 0);
+        return dt;
+    }
+    function monthsDiffUTC(a, b) {
+        // a - b in whole months
+        return (a.getUTCFullYear() - b.getUTCFullYear()) * 12 + (a.getUTCMonth() - b.getUTCMonth());
+    }
+
+    if (!lastDate) {
         // First ever completion
         newCurrentStreak = 1;
+    } else {
+        if (habitData.frequency === FREQUENCY.DAILY) {
+            const oneDay = 24 * 60 * 60 * 1000;
+            const diffDays = Math.floor((completedDt - lastDate) / oneDay);
+            if (diffDays === 1) {
+                newCurrentStreak += 1; // next day
+            } else if (diffDays > 1) {
+                newCurrentStreak = 1; // missed one or more days
+            }
+        } else if (habitData.frequency === FREQUENCY.WEEKLY) {
+            const lastWeek = startOfWeekUTC(lastDate);
+            const thisWeek = startOfWeekUTC(completedDt);
+            const weekDiff = Math.round((thisWeek - lastWeek) / (7 * 24 * 60 * 60 * 1000));
+            if (weekDiff === 1) {
+                newCurrentStreak += 1; // consecutive week
+            } else if (weekDiff > 1) {
+                newCurrentStreak = 1; // missed one or more full weeks
+            }
+        } else if (habitData.frequency === FREQUENCY.MONTHLY) {
+            const mDiff = monthsDiffUTC(completedDt, lastDate);
+            if (mDiff === 1) {
+                newCurrentStreak += 1; // consecutive month
+            } else if (mDiff > 1) {
+                newCurrentStreak = 1; // missed one or more full months
+            }
+        } else {
+            console.log('--- Unknown frequency type for habit:', habitData.frequency);
+        }
     }
-    if (newCurrentStreak > newLongestStreak) { // Update longest streak if needed
+
+    if (newCurrentStreak > newLongestStreak) {
         newLongestStreak = newCurrentStreak;
     }
+
     // Update streak in DB
     const { data: updatedStreak, error: updateStreakError } = await supabase
         .from(TABLES.STREAKS)

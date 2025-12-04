@@ -2,7 +2,6 @@ import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
 import cookieParser from 'cookie-parser'
-import { requireAuth } from './middleware/auth.js'
 import { supabase } from './db/supabaseClient.js'
 import { TABLES } from './db/tables.js'
 import { PET_MOOD_DOWN } from './constants.js'
@@ -34,7 +33,7 @@ app.use('/api', meRouter);
 // mount habit routes
 app.use('/api/habits', habitRouter);
 // mount pet routes
-app.use('/api/pets', petRouter);
+app.use('/api/pet', petRouter);
 // mount quote routes
 app.use('/api/quote', quoteRouter);
 
@@ -64,7 +63,6 @@ app.use((err, _req, res, _next) => {
 async function dailyMaintenance() {
   console.log('[Daily Maintenance] Starting daily maintenance job...');
 
-  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const now = new Date(); // current date and time
   const todayDay = now.getDay(); // 0 (Sun) to 6 (Sat)
   const todayDate = now.getDate(); // 1 to 31
@@ -84,7 +82,7 @@ async function dailyMaintenance() {
         user_id,
         current_streak,
         last_completed_date,
-        habit:${TABLES.HABITS}!inner(frequency)
+        habit:habit_id!inner(frequency)
       `)
       .gt('current_streak', 0); // Only check habits with active streaks (greater than 0)
 
@@ -166,8 +164,6 @@ async function dailyMaintenance() {
     } else if (inactiveHabits && inactiveHabits.length > 0) {
       for (const habit of inactiveHabits) {
         let shouldActivate = false;
-
-        console.log(todayDay);
 
         if (habit.frequency == 'daily') {
           // Daily habits reactivate every day

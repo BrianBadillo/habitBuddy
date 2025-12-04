@@ -1,4 +1,4 @@
-import e, { Router } from 'express'
+import { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { requireAuth } from '../middleware/auth.js'
 import { TABLES } from '../db/tables.js'
@@ -80,7 +80,7 @@ router.get('/me', requireAuth, async (req, res) => {
         .maybeSingle(); // maybeSingle in case user has no pet yet
 
     if (petError) {
-        return res.status(500).json({ error: error.message || 'Error fetching pet data' });
+        return res.status(500).json({ error: petError.message || 'Error fetching pet data' });
     }
 
     res.json({

@@ -1,4 +1,4 @@
-import e, { Router } from 'express'
+import { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { TABLES } from '../db/tables.js'
 import { PET_MOOD } from '../constants.js'
@@ -66,7 +66,7 @@ router.post('/signup', async (req, res) => {
     if (profileError || !profileData) {
         // Rollback: delete the auth user if profile creation fails
         await supabase.auth.admin.deleteUser(userId);
-        return res.status(400).json({ error: error?.message || 'Failed to create user profile' });
+        return res.status(400).json({ error: profileError?.message || 'Failed to create user profile' });
     }
 
     const defaultPetTypeId = 1;
@@ -92,7 +92,7 @@ router.post('/signup', async (req, res) => {
         // Rollback: delete the auth user and profile if pet creation fails
         await supabase.auth.admin.deleteUser(userId);
         await supabase.from(TABLES.PROFILES).delete().eq('id', userId);
-        return res.status(500).json({ error: error?.message || 'Failed to create default pet for user' });
+        return res.status(500).json({ error: petError?.message || 'Failed to create default pet for user' });
     }
 
     // Respond with full profile info
