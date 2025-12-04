@@ -492,7 +492,7 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     // Fetch user's pet
     const { data: petData, error: petError } = await supabase
         .from(TABLES.PETS)
-        .select('id, name, level, xp, mood')
+        .select('id, name, level, xp, mood, current_stage_id, pet_type_id')
         .eq('user_id', userId)
         .single();
     if (petError || !petData) {
@@ -504,7 +504,25 @@ router.post('/:habitId/check-in', requireAuth, async (req, res) => {
     let newLevel = petData.level;
     // Check for level up
     while (newLevel < Object.keys(PET_LEVELS).length && newXp >= PET_LEVELS[newLevel + 1]) {
-        newLevel += 1;
+        newLevel += 1; // level up
+        // Increment the pet's current stage (same pet_type, and stage_number = newLevel):
+        // Get the new stage ID (if next stage up doesn't exist, stay at current stage)
+        const { data: nextStageData, error: nextStageError } = await supabase
+            .from(TABLES.EVOLUTION_STAGES)
+            .select('id')
+            .eq('pet_type_id', petData.pet_type_id)
+            .eq('stage_number', newLevel)
+            .single();
+        if (!nextStageError && nextStageData) {
+            // Update pet's current stage ID
+            const { error: updateStageError } = await supabase
+                .from(TABLES.PETS)
+                .update({ current_stage_id: nextStageData.id })
+                .eq('id', petData.id);
+            if (updateStageError) {
+                return res.status(500).json({ error: 'Failed to update pet stage on level up' });
+            }
+        }
     }
     // Update mood positively
     const newMood = PET_MOOD_UP[petData.mood] || petData.mood;
