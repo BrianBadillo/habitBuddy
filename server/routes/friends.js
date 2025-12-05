@@ -139,36 +139,24 @@ router.patch('/:friendId', requireAuth, async (req, res) => {
     const { friendId } = req.params;
     const { status } = req.body;
 
-    // Find the existing friendship
-    const { data: friendship, error: fetchError } = await supabase
-        .from(TABLES.FRIENDS)
-        .select('*')
-        .or(`and(requester_id.eq.${userId},addressee_id.eq.${friendId}),and(requester_id.eq.${friendId},addressee_id.eq.${userId})`)
-        .maybeSingle();
-    if (fetchError) {
-        return res.status(500).json({ error: fetchError.message });
-    }
-    if (!friendship) {
-        return res.status(404).json({ error: 'Friendship not found' });
-    }
-
-    if (status === 'removed' || status === 'rejected') {
-        // Delete the friendship
-        const { error: deleteError } = await supabase
-            .from(TABLES.FRIENDS)
-            .delete()
-            .eq('id', friendship.id);
-        if (deleteError) {
-            return res.status(500).json({ error: deleteError.message });
-        }
-        return res.status(204).send(); // 204 means no content
-    }
-
+    // If status is 'accepted'
     if (status === 'accepted') {
-        // Update the friendship status
+        // Get the existing friend request
+        const { data: friendship, error: fetchError } = await supabase
+            .from(TABLES.FRIENDS)
+            .select('*')
+            .eq('requester_id', friendId)
+            .eq('addressee_id', userId)
+            .eq('status', 'pending')
+            .single();
+        if (fetchError) {
+            return res.status(404).json({ error: 'Friend request not found' });
+        }
+
+        // Update the status to accepted
         const { data: updatedFriendship, error: updateError } = await supabase
             .from(TABLES.FRIENDS)
-            .update({ status })
+            .update({ status: 'accepted' })
             .eq('id', friendship.id)
             .select('*')
             .single();
@@ -183,9 +171,23 @@ router.patch('/:friendId', requireAuth, async (req, res) => {
             status: updatedFriendship.status,
             createdAt: updatedFriendship.created_at
         });
-    }
+    } 
+    // If status is 'rejected' or 'removed'
+    else if (status === 'rejected' || status === 'removed') {
+        // Delete the friendship
+        const { error: deleteError } = await supabase
+            .from(TABLES.FRIENDS)
+            .delete()
+            .or(`and(requester_id.eq.${userId},addressee_id.eq.${friendId}),and(requester_id.eq.${friendId},addressee_id.eq.${userId})`);
+        if (deleteError) {
+            return res.status(500).json({ error: deleteError.message });
+        }
 
-    return res.status(400).json({ error: 'Invalid status value' });
+        return res.status(204).send();
+    } 
+    else {
+        return res.status(400).json({ error: 'Invalid status value' });
+    }
 });
 
 // GET /api/friends/:friendId/pet - View a friend’s pet info (if friendship is accepted).
