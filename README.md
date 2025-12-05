@@ -32,9 +32,6 @@ Set environment variables in `server/.env`
 ```
 SUPABASE_URL=...
 SUPABASE_SERVICE_ROLE_KEY=...
-SUPABASE_ANON_KEY=...
-FRONTEND_URL=http://localhost:3000
-PORT=3001
 ```
 
 ### Frontend
@@ -42,10 +39,6 @@ PORT=3001
 cd frontend
 npm install
 npm run dev   # starts Next.js on http://localhost:3000
-```
-Env file `frontend/.env.local`:
-```
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
 ### Auth & Admin
@@ -73,11 +66,14 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 - Base URL: `http://localhost:3001/api`
 - Auth: session cookie `session` (set via login).
 - Most routes require auth; admin routes require `role = admin`.
-- See `API_ROUTES.md` for full endpoint descriptions.
+- See [API_ROUTES.md](API_ROUTES.md) for full endpoint descriptions.
 
 ## Screenshots
-Add screenshots: 
-- Dashboard (habits + pet): 
-- Pet adoption: 
-- Admin pet types: 
 
+- Dashboard Page (habits + pet): ![Dashboard Screenshot](images/a.png)
+- Habits Page: ![Habits Screenshot](images/b.png)
+- Friends Page: ![Friends Screenshot](images/c.png)
+- Leaderboard Page: ![Leaderboard Screenshot](images/d.png)
+- Pet Page: ![Pet Screenshot](images/e.png)
+- Adopt a new pet: ![Adopt Screenshot](images/f.png)
+- Admin Page: ![Admin Screenshot](images/g.png)
