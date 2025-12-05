@@ -2,6 +2,11 @@
 
 HabitBuddy is a full-stack habit tracker with a virtual pet companion. Track habits, level up your pet and (as an admin) manage pet types and users. 
 
+## Roles
+- Liam Messinger: Backend
+- Brian Badillo: Frontend(Main user pages)
+- Amelia Gankhuyag: Frontend(Admin User + Pet Page)
+
 ## Tech Stack
 - **Frontend:** Next.js (App Router), TypeScript, Tailwind
 - **Backend:** Express + Supabase (Postgres + Auth)
