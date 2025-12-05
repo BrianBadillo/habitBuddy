@@ -5,7 +5,7 @@ Base URL: `/api`
 Notes
 - All endpoints prefixed by section path (e.g., `/api/auth`, `/api/me`, `/api/habits`).
 - Auth: Most endpoints require a valid session cookie `session` set by login. Admin endpoints require `role = admin`.
-- Dates: Unless stated, dates use `YYYY-MM-DD`.
+- Dates: Dates use `YYYY-MM-DD`.
 - Errors: On failure, endpoints return `{ "error": string }` with appropriate HTTP status.
 
 ## Auth

@@ -49,7 +49,7 @@ export function PetSummaryCard({ pet }: Props) {
   return (
     <div className="rounded-xl border p-4 bg-white text-slate-900 flex gap-4">
       {/* Placeholder avatar */}
-      <div className="w-20 h-20 rounded-xl bg-slate-200 flex items-center justify-center text-3xl">
+      <div className="w-28 h-28 md:w-32 md:h-32 rounded-xl bg-slate-200 flex items-center justify-center text-3xl">
         {getPetSprite(pet) && (
           <img
             src={getPetSprite(pet)}
