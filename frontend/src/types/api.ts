@@ -121,7 +121,7 @@ export interface LeaderboardXpEntry {
 export interface LeaderboardStreakEntry {
   rank: number;
   user: FriendProfile;
-  bestStreak: number;
+  longest_streak: number;
 }
 
 export interface QuoteResponse {
@@ -167,4 +167,29 @@ export interface LeaderboardStreakEntry {
   rank: number;
   user: FriendProfile;
   bestStreak: number;
+}
+
+// Admin
+export interface AdminMetrics {
+  totalUsers: number;
+  totalHabits: number;
+  totalCompletions: number;
+  activeUsers: number;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  username: string;
+  displayName?: string | null;
+  role: Role;
+  createdAt: string;
+}
+
+export interface AdminStage {
+  id: number;
+  petTypeId: number;
+  stageNumber: number;
+  name: string;
+  spriteUrl?: string | null;
+  description?: string | null;
 }

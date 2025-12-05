@@ -19,7 +19,8 @@ export function HabitsClient({ initialHabits }: Props) {
   const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>(
     'daily',
   );
-  const [difficulty, setDifficulty] = useState<(typeof DIFFICULTY_OPTIONS)[number]>('Easy');
+  const [difficulty, setDifficulty] =
+    useState<(typeof DIFFICULTY_OPTIONS)[number]>('Easy');
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -61,9 +62,27 @@ export function HabitsClient({ initialHabits }: Props) {
   async function handleCheckIn(habitId: string) {
     setError(null);
     setSuccess(null);
+
+    // 🔒 don’t allow check-in on completed habits
+    const target = habits.find((h) => h.id === habitId);
+    if (!target) return;
+    if (!target.isActive) {
+      setError('This habit is already completed.');
+      return;
+    }
+
     try {
       const today = new Date().toISOString().slice(0, 10);
-      await api.checkInHabit(habitId, today);
+
+      // API usually returns { habit, streak, pet }
+      const resp = await api.checkInHabit(habitId, today);
+      const updatedHabit: Habit = (resp as any).habit ?? resp;
+
+      // update local state so sections move between active/completed
+      setHabits((prev) =>
+        prev.map((h) => (h.id === habitId ? updatedHabit : h)),
+      );
+
       setSuccess('Check-in recorded!');
     } catch (err: any) {
       setError(err.message ?? 'Failed to check in.');
@@ -82,6 +101,10 @@ export function HabitsClient({ initialHabits }: Props) {
       setError(err.message ?? 'Failed to delete habit.');
     }
   }
+
+  // 🔹 split habits into active vs completed
+  const activeHabits = habits.filter((h) => h.isActive);
+  const completedHabits = habits.filter((h) => !h.isActive);
 
   return (
     <div className="space-y-4">
@@ -122,7 +145,9 @@ export function HabitsClient({ initialHabits }: Props) {
                 className="border rounded-md px-2 py-1 text-sm"
                 value={frequency}
                 onChange={(e) =>
-                  setFrequency(e.target.value as 'daily' | 'weekly' | 'monthly')
+                  setFrequency(
+                    e.target.value as 'daily' | 'weekly' | 'monthly',
+                  )
                 }
               >
                 <option value="daily">Daily</option>
@@ -137,7 +162,9 @@ export function HabitsClient({ initialHabits }: Props) {
                 className="border rounded-md px-2 py-1 text-sm"
                 value={difficulty}
                 onChange={(e) =>
-                  setDifficulty(e.target.value as (typeof DIFFICULTY_OPTIONS)[number])
+                  setDifficulty(
+                    e.target.value as (typeof DIFFICULTY_OPTIONS)[number],
+                  )
                 }
               >
                 {DIFFICULTY_OPTIONS.map((opt) => (
@@ -159,19 +186,39 @@ export function HabitsClient({ initialHabits }: Props) {
         </button>
 
         {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
-        {success && (
-          <p className="text-xs text-emerald-600 mt-1">{success}</p>
-        )}
+        {success && <p className="text-xs text-emerald-600 mt-1">{success}</p>}
       </form>
 
-      {/* List */}
-      <div className="space-y-2">
+      {/* Lists */}
+      <div className="space-y-3">
         <h2 className="font-semibold text-sm">Your habits</h2>
-        <HabitList
-          habits={habits}
-          onCheckIn={handleCheckIn}
-          onDelete={handleDelete}
-        />
+
+        {/* Active section */}
+        <div className="space-y-1">
+          <h3 className="text-xs font-semibold text-slate-500 uppercase">
+            Active
+          </h3>
+          <HabitList
+            habits={activeHabits}
+            onCheckIn={handleCheckIn}
+            onDelete={handleDelete}
+            // ✅ keep your existing View support in HabitList, don’t remove it there
+          />
+        </div>
+
+        {/* Completed section */}
+        {completedHabits.length > 0 && (
+          <div className="space-y-1">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase">
+              Completed
+            </h3>
+            <HabitList
+              habits={completedHabits}
+              onCheckIn={handleCheckIn} // safe; handleCheckIn blocks completed
+              onDelete={handleDelete}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
