@@ -259,6 +259,22 @@ export const api = {
     return apiFetch<FriendSummary>(`/api/friends/${friendId}/summary`);
   },
 
+  sendFriendRequest(friendId: string) {
+    return apiFetch<FriendEntry>(`/api/friends/${friendId}`, {
+      method: 'POST',
+    });
+  },
+
+  updateFriendStatus(
+    friendId: string,
+    status: 'accepted' | 'rejected' | 'removed' | 'blocked',
+  ) {
+    return apiFetch<FriendEntry | void>(`/api/friends/${friendId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
   // -------- Leaderboards --------
 
   getXpLeaderboard(scope: 'friends' | 'global' = 'friends') {
@@ -352,3 +368,5 @@ export const api = {
     });
   },
 };
+
+

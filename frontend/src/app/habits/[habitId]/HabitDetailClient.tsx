@@ -5,7 +5,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/apiClient';
 import { Habit, HabitCompletion, Streak } from '@/types/api';
-
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -26,18 +25,24 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
   async function handleCheckIn() {
     setError(null);
     setMsg(null);
+
+    // 🔒 don’t allow check-in on completed habits
+    if (!habitState.isActive) {
+      setError('This habit is already completed.');
+      return;
+    }
+
     try {
       setLoading(true);
       const today = new Date().toISOString().slice(0, 10);
 
-      // record on backend
       const result = await api.checkInHabit(habitState.id, today);
 
-      // optimistic local update
+      // optimistic local update of history
       setHistoryState((prev) => [
         ...prev,
         {
-          completionId: Date.now(), // temp id; real backend id can replace later
+          completionId: Date.now(), // temp id
           completedDate: today,
           completedCount: 1,
         },
@@ -51,24 +56,6 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
       router.push('/dashboard'); // redirect after successful check-in
     } catch (err: any) {
       setError(err.message ?? 'Failed to check in.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleUndo(completion: HabitCompletion) {
-    setError(null);
-    setMsg(null);
-    try {
-      setLoading(true);
-      await api.undoHabitCompletion(habitState.id, completion.completionId);
-
-      setHistoryState((prev) =>
-        prev.filter((c) => c.completionId !== completion.completionId)
-      );
-      setMsg('Completion undone.');
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to undo completion.');
     } finally {
       setLoading(false);
     }
@@ -119,15 +106,21 @@ export function HabitDetailClient({ habit, history, streak }: Props) {
           </div>
         )}
 
-        <button
-          className="mt-3 inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          disabled={loading}
-          onClick={handleCheckIn}
-        >
-          {loading ? 'Working...' : 'Check in for today'}
-        </button>
+        {/* Only show button if habit is active */}
+        {habitState.isActive ? (
+          <button
+            className="mt-3 inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 hover:bg-indigo-700 active:bg-indigo-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={loading}
+            onClick={handleCheckIn}
+          >
+            {loading ? 'Working...' : 'Check in for today'}
+          </button>
+        ) : (
+          <p className="mt-3 text-xs text-emerald-700 bg-emerald-50 inline-flex px-2 py-1 rounded-md">
+            This habit is completed. No further check-ins.
+          </p>
+        )}
       </div>
-
 
       {msg && <p className="text-xs text-emerald-600">{msg}</p>}
       {error && <p className="text-xs text-red-600">{error}</p>}

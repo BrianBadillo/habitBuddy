@@ -50,7 +50,8 @@ export function HabitList({ habits, onCheckIn, onDelete }: Props) {
           </div>
 
           <div className="flex items-center gap-2">
-            {onCheckIn && (
+            {/* hide if habit is not active */}
+            {onCheckIn && h.isActive && (
               <button
                 className="text-xs px-2 py-1 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 transition-colors"
                 onClick={() => handleConfirmCheckIn(h.id)}

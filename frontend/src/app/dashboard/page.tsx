@@ -9,14 +9,14 @@ export default async function DashboardPage() {
     api.getMe(),
     api.getMeSummary(),
     api.getDailyQuote(),
-    api.getHabits(true), // true = only active habits
+    api.getHabits(), 
   ]);
 
   return (
     <div className="space-y-6">
       {/* Top row: pet + quick stats */}
       <div className="grid md:grid-cols-2 gap-4">
-        <PetSummaryCard pet={me.pet ?? undefined} />
+        <PetSummaryCard pet={me.pet!} />
 
         <div className="rounded-xl border p-4 bg-white text-slate-900 flex flex-col justify-between">
           <div>

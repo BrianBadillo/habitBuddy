@@ -27,10 +27,10 @@ export default async function LeaderboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-semibold">Leaderboard</h1>
+      <h1 className="text-xl font-semibold">Friend's Leaderboard</h1>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-lg">XP (Friends)</h2>
+        <h2 className="font-semibold text-lg">XP</h2>
         {xpLeaderboard.length === 0 ? (
           <p className="text-sm text-slate-600">
             No XP leaderboard data yet.
@@ -68,7 +68,7 @@ export default async function LeaderboardPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="font-semibold text-lg">Streaks (Global)</h2>
+        <h2 className="font-semibold text-lg">Streaks</h2>
         {streakLeaderboard.length === 0 ? (
           <p className="text-sm text-slate-600">
             No streak leaderboard data yet.
@@ -94,7 +94,7 @@ export default async function LeaderboardPage() {
                   </div>
                 </div>
                 <div className="text-xs text-right text-slate-600">
-                  Best streak: {entry.bestStreak} days
+                  Best streak: {entry.longest_streak} days
                 </div>
               </li>
             ))}
