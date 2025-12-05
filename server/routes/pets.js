@@ -7,13 +7,36 @@ import { PET_MOOD, PET_MOOD_UP } from '../constants.js'
 // Create a router for pet-related routes
 const router = Router()
 
+function mapPet(dbPet) {
+    if (!dbPet) return null;
+
+    return {
+        id: dbPet.id,
+        name: dbPet.name,
+        level: dbPet.level,
+        xp: dbPet.xp,
+        mood: dbPet.mood,
+        petType: {
+            id: dbPet.pet_type.id,
+            name: dbPet.pet_type.name,
+            baseSpriteUrl: dbPet.pet_type.base_sprite_url
+        },
+        currentStage: {
+            id: dbPet.current_stage.id,
+            stageNumber: dbPet.current_stage.stage_number,
+            name: dbPet.current_stage.name,
+            spriteUrl: dbPet.current_stage.sprite_url
+        }
+    }
+}
+
 // GET /api/pet/types - List all available pet types
 /* Example response:
 [
   { "id": 1, "name": "Cat", "baseSpriteUrl": "/sprites/cat-base.png" },
   { "id": 2, "name": "Dog", "baseSpriteUrl": "/sprites/dog-base.png" }
 ]*/
-router.get('/types', async (req, res) => {
+router.get('/types', async (_req, res) => {
     const { data: petTypes, error } = await supabase
         .from(TABLES.PET_TYPES)
         .select('id, name, base_sprite_url');
@@ -66,16 +89,7 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     // Respond with pet data
-    res.json({
-        id: petData.id,
-        name: petData.name,
-        xp: petData.xp,
-        level: petData.level,
-        mood: petData.mood,
-        petType: petData.pet_type,
-        currentStage: petData.current_stage,
-        lastInteractionDate: petData.last_interaction_date
-    });
+    res.json(mapPet(petData));
 });
 
 // PATCH /api/pet - Update pet properties such as name
@@ -127,16 +141,7 @@ router.patch('/', requireAuth, async (req, res) => {
     }
     
     // Respond with updated pet data
-    res.json({
-        id: petData.id,
-        name: petData.name,
-        xp: petData.xp,
-        level: petData.level,
-        mood: petData.mood,
-        petType: petData.pet_type,
-        currentStage: petData.current_stage,
-        lastInteractionDate: petData.last_interaction_date
-    });
+    res.json(mapPet(petData));
 });
 
 // POST /api/pet/ping - Record a non-habit interaction to refresh mood/last interaction
@@ -200,16 +205,7 @@ router.post('/ping', requireAuth, async (req, res) => {
     }
 
     // Respond with updated pet data
-    res.json({
-        id: updatedPetData.id,
-        name: updatedPetData.name,
-        xp: updatedPetData.xp,
-        level: updatedPetData.level,
-        mood: updatedPetData.mood,
-        petType: updatedPetData.pet_type,
-        currentStage: updatedPetData.current_stage,
-        lastInteractionDate: updatedPetData.last_interaction_date
-    });
+    res.json(mapPet(petData));
 });
 
 // POST /api/pet - Switch the pet to a different type
@@ -277,16 +273,7 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     // Respond with new pet data
-    res.json({
-        id: newPetData.id,
-        name: newPetData.name,
-        xp: newPetData.xp,
-        level: newPetData.level,
-        mood: newPetData.mood,
-        petType: newPetData.pet_type,
-        currentStage: newPetData.current_stage,
-        lastInteractionDate: newPetData.last_interaction_date
-    });
+    res.json(mapPet(petData));
 });
 
 export default router;
