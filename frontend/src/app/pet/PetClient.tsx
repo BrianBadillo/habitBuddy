@@ -1,9 +1,18 @@
 // src/app/pet/PetClient.tsx
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { Pet } from '@/types/api';
 import { api } from '@/lib/apiClient';
+
+const spriteFallbacks: Record<string, Record<number, string>> = {
+  Fox: {
+    1: '/pets/fox-stage-1.png',
+    2: '/pets/fox-stage-2.png',
+    3: '/pets/fox-stage-3.png',
+  },
+};
 
 interface Props {
   initialPet: Pet | null;
@@ -11,37 +20,25 @@ interface Props {
 
 export function PetClient({ initialPet }: Props) {
   const [pet, setPet] = useState<Pet | null>(initialPet);
-  const [petTypeId, setPetTypeId] = useState<number>(1);
-  const [name, setName] = useState<string>('');
   const [rename, setRename] = useState<string>('');   // 🔹 new name field
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleCreatePet(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setMsg(null);
-
-    if (!name.trim()) {
-      setError('Pet name is required.');
-      return;
+  function getPetSprite(current: Pet | null) {
+    if (!current) return undefined;
+    const stageNumber = current.currentStage?.stageNumber;
+    const typeName = current.petType?.name;
+    if (stageNumber && typeName && spriteFallbacks[typeName]?.[stageNumber]) {
+      return (
+        current.currentStage?.spriteUrl ??
+        spriteFallbacks[typeName][stageNumber]
+      );
     }
-
-    try {
-      setLoading(true);
-      const created = await api.createPet({
-        petTypeId,
-        name: name.trim(),
-      });
-      setPet(created);
-      setMsg('Pet adopted!');
-      setName('');
-    } catch (err: any) {
-      setError(err.message ?? 'Failed to create pet.');
-    } finally {
-      setLoading(false);
+    if (typeName && spriteFallbacks[typeName]?.[1]) {
+      return current.petType?.baseSpriteUrl ?? spriteFallbacks[typeName][1];
     }
+    return current.currentStage?.spriteUrl || current.petType?.baseSpriteUrl;
   }
 
   async function handlePing() {
@@ -97,9 +94,9 @@ export function PetClient({ initialPet }: Props) {
         <div className="space-y-4">
           <div className="rounded-xl border p-4 bg-white flex gap-4">
             <div className="w-24 h-24 rounded-xl bg-slate-200 flex items-center justify-center overflow-hidden">
-              {(pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl) && (
+              {getPetSprite(pet) && (
                 <img
-                  src={(pet.currentStage?.spriteUrl || pet.petType?.baseSpriteUrl) ?? undefined}
+                  src={getPetSprite(pet)}
                   alt={pet.petType?.name ?? 'Your pet'}
                   className="w-full h-full object-contain"
                 />
@@ -164,48 +161,34 @@ export function PetClient({ initialPet }: Props) {
               </button>
             </div>
           </form>
+
+          <div className="rounded-xl border p-4 bg-white space-y-2 text-sm">
+            <h2 className="font-semibold text-sm">Want a different pet type?</h2>
+            <p className="text-slate-600">
+              Adopt a new pet to switch companions. Your pet will restart at level 1 with the new type.
+            </p>
+            <Link
+              href="/pet/adopt"
+              className="inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-xs px-3 py-1.5"
+            >
+              Adopt a new pet
+            </Link>
+          </div>
         </div>
       ) : (
-        <form
-          onSubmit={handleCreatePet}
-          className="rounded-xl border p-4 bg-white space-y-3"
-        >
+        <div className="rounded-xl border p-4 bg-white space-y-3">
           <h2 className="font-semibold text-sm">Adopt your first pet</h2>
-
-          <label className="flex flex-col gap-1 text-sm">
-            <span>Pet name</span>
-            <input
-              className="border rounded-md px-2 py-1 text-sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Mocha"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-sm">
-            <span>Pet type ID (temp)</span>
-            <input
-              type="number"
-              min={1}
-              className="border rounded-md px-2 py-1 text-sm w-24"
-              value={petTypeId}
-              onChange={(e) =>
-                setPetTypeId(parseInt(e.target.value || '1', 10))
-              }
-            />
-            <span className="text-xs text-slate-500">
-              Later this can be a dropdown of pet types.
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5 disabled:opacity-60"
+          <p className="text-sm text-slate-600">
+            Choose a companion to adventure with you. Head to the adoption
+            page to pick your buddy and give them a name.
+          </p>
+          <Link
+            className="inline-flex items-center justify-center rounded-md bg-indigo-600 text-white text-sm px-3 py-1.5"
+            href="/pet/adopt"
           >
-            {loading ? 'Adopting...' : 'Adopt pet'}
-          </button>
-        </form>
+            Go to adoption page
+          </Link>
+        </div>
       )}
 
       {msg && <p className="text-xs text-emerald-600">{msg}</p>}
