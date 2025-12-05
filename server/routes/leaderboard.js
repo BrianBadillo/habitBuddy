@@ -137,19 +137,27 @@ router.get('/streaks', requireAuth, async (req, res) => {
             return res.status(500).json({ error: profilesError.message });
         }
 
-        // Aggregate best (max) longest_streak per user
-        const { data: streakAgg, error: streaksError } = await supabase
+        // Fetch all streaks for these users
+        const { data: streakData, error: streaksError } = await supabase
             .from(TABLES.STREAKS)
-            .select('user_id, longest_streak:max(longest_streak)')
-            .in('user_id', ids)
-            .group('user_id');
+            .select('user_id, longest_streak')
+            .in('user_id', ids);
         if (streaksError) {
+            console.error('Error fetching streaks:', streaksError);
             return res.status(500).json({ error: streaksError.message });
         }
 
+        // Aggregate to find max longest_streak per user (client-side)
+        const streakMap = new Map();
+        streakData.forEach(s => {
+            const current = streakMap.get(s.user_id) || 0;
+            if (s.longest_streak > current) {
+                streakMap.set(s.user_id, s.longest_streak);
+            }
+        });
+
         // Build maps
         const profileMap = new Map(profiles.map(p => [p.id, p]));
-        const streakMap = new Map(streakAgg.map(s => [s.user_id, s.longest_streak]));
 
         // Build leaderboard entries and sort by best streak
         const entries = ids
