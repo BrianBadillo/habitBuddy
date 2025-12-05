@@ -15,6 +15,11 @@ import {
   LeaderboardStreakEntry,
   Frequency,
   User,
+  PetType,
+  AdminMetrics,
+  AdminUserSummary,
+  AdminStage,
+  Role,
 } from '@/types/api';
 
 type Difficulty = 'Trivial' | 'Easy' | 'Medium' | 'Hard';
@@ -211,11 +216,15 @@ export const api = {
 
   // -------- Pet --------
 
+  getPetTypes() {
+    return apiFetch<PetType[]>('/api/pet/types');
+  },
+
   getPet() {
     return apiFetch<Pet>('/api/pet');
   },
 
-  createPet(data: { petTypeId: number; name: string }) {
+  createPet(data: { petTypeId: number; name: string; replaceExisting?: boolean }) {
     return apiFetch<Pet>('/api/pet', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -268,5 +277,78 @@ export const api = {
 
   getDailyQuote() {
     return apiFetch<QuoteResponse>('/api/quote');
+  },
+
+  // -------- Admin --------
+
+  adminCheck() {
+    return apiFetch<{ ok: boolean }>('/api/admin');
+  },
+
+  adminGetMetrics() {
+    return apiFetch<AdminMetrics>('/api/admin/metrics/overview');
+  },
+
+  adminGetPetTypes() {
+    return apiFetch<PetType[]>('/api/admin/pet-types');
+  },
+
+  adminGetPetTypeDetail(petTypeId: number) {
+    return apiFetch<{ petType: PetType; stages: AdminStage[] }>(
+      `/api/admin/pet-types/${petTypeId}`
+    );
+  },
+
+  adminCreatePetType(data: {
+    name: string;
+    description: string;
+    baseSpriteUrl: string;
+  }) {
+    return apiFetch<PetType>('/api/admin/pet-types', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  adminUpdatePetType(
+    petTypeId: number,
+    data: Partial<{ name: string; description: string; baseSpriteUrl: string }>
+  ) {
+    return apiFetch<PetType>(`/api/admin/pet-types/${petTypeId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  adminDeletePetType(petTypeId: number) {
+    return apiFetch<void>(`/api/admin/pet-types/${petTypeId}`, {
+      method: 'DELETE',
+    });
+  },
+
+  adminCreateStage(
+    petTypeId: number,
+    data: {
+      stageNumber: number;
+      name: string;
+      spriteUrl: string;
+      description?: string;
+    }
+  ) {
+    return apiFetch<AdminStage>(`/api/admin/pet-types/${petTypeId}/stages`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  adminListUsers() {
+    return apiFetch<AdminUserSummary[]>('/api/admin/users');
+  },
+
+  adminUpdateUserRole(userId: string, role: Role) {
+    return apiFetch<AdminUserSummary>(`/api/admin/users/${userId}/role`, {
+      method: 'PATCH',
+      body: JSON.stringify({ role }),
+    });
   },
 };

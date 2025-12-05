@@ -124,6 +124,31 @@ export interface LeaderboardStreakEntry {
   bestStreak: number;
 }
 
+// Admin
+export interface AdminMetrics {
+  totalUsers: number;
+  totalHabits: number;
+  totalCompletions: number;
+  activeUsers: number;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  username: string;
+  displayName?: string | null;
+  role: Role;
+  createdAt: string;
+}
+
+export interface AdminStage {
+  id: number;
+  petTypeId: number;
+  stageNumber: number;
+  name: string;
+  spriteUrl?: string | null;
+  description?: string | null;
+}
+
 export interface QuoteResponse {
   text: string;
   author: string;

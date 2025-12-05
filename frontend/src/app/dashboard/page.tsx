@@ -37,6 +37,7 @@ export default async function DashboardPage() {
 
       {/* Quote */}
       <div className="rounded-xl border p-4 bg-gradient-to-r from-indigo-50 to-sky-50 text-slate-900">
+        <h3 className="font-semibold mb-2">Daily Motivation</h3>
         <p className="text-sm italic">&ldquo;{quote.text}&rdquo;</p>
         <p className="text-xs mt-1 text-right text-slate-600">
           — {quote.author}

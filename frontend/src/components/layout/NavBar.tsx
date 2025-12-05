@@ -7,13 +7,6 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/apiClient';
 import type { User } from '@/types/api';
 
-const links = [
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/habits', label: 'Habits' },
-  { href: '/friends', label: 'Friends' },
-  { href: '/leaderboard', label: 'Leaderboard' },
-];
-
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -54,7 +47,16 @@ export function Navbar() {
 
       <div className="flex items-center gap-4">
         <div className="flex gap-3 text-sm">
-          {links.map((link) => {
+          {[
+            { href: '/dashboard', label: 'Dashboard' },
+            { href: '/habits', label: 'Habits' },
+            { href: '/friends', label: 'Friends' },
+            { href: '/leaderboard', label: 'Leaderboard' },
+            { href: '/pet', label: 'Pet' },
+            ...(user?.role === 'admin'
+              ? [{ href: '/admin', label: 'Admin' }]
+              : []),
+          ].map((link) => {
             const active = pathname === link.href;
             return (
               <Link
