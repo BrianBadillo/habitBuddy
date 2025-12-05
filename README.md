@@ -71,7 +71,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 - See `API_ROUTES.md` for full endpoint descriptions.
 
 ## Screenshots
-Add your screenshots: 
+Add screenshots: 
 - Dashboard (habits + pet): 
 - Pet adoption: 
 - Admin pet types: 
