@@ -15,7 +15,7 @@ Example response:
     "id": "7f664e4a-64b6-42bb-bf51-91f44e6c1111",
     "name": "Study",
     "description": "1 hour of CS",
-    "frequency": "daily",
+    "frequency": "Daily",
     "isActive": true,
     "difficulty": "Medium",
     "createdAt": "2025-11-20T14:00:00.000Z"
@@ -24,7 +24,7 @@ Example response:
     "id": "f3423d1b-fdcc-4c35-930b-8f1d9d5d2222",
     "name": "Workout",
     "description": "Gym 3x/week",
-    "frequency": "weekly",
+    "frequency": "Weekly",
     "isActive": true,
     "difficulty": "Hard",
     "createdAt": "2025-11-21T16:30:00.000Z"
@@ -73,7 +73,7 @@ Example response:
     "id": "7f664e4a-64b6-42bb-bf51-91f44e6c1111",
     "name": "Study",
     "description": "1 hour of CS",
-    "frequency": "daily",
+    "frequency": "Daily",
     "isActive": true,
     "difficulty": "Medium",
     "createdAt": "2025-11-20T14:00:00.000Z"
@@ -137,7 +137,7 @@ router.get('/:habitId', requireAuth, async (req, res) => {
 {
   "name": "Drink Water",
   "description": "8 cups a day",
-  "frequency": "daily",
+  "frequency": "Daily",
   "difficulty": "Easy",
 }
 
@@ -146,7 +146,7 @@ Example response:
   "id": "a2b0f7b0-5c49-4d9c-8741-1d2c744e3333",
   "name": "Drink Water",
   "description": "8 cups a day",
-  "frequency": "daily",
+  "frequency": "Daily",
   "isActive": true,
   "difficulty": "Easy",
   "createdAt": "2025-11-27T04:05:00.000Z"
@@ -213,7 +213,7 @@ router.post('/', requireAuth, async (req, res) => {
 {
   "name": "Drink Water",
   "description": "8 cups per day",
-  "frequency": "daily",
+  "frequency": "Daily",
   "isActive": true,
   "difficulty": "Trivial"
 }
@@ -223,7 +223,7 @@ Example response:
   "id": "a2b0f7b0-5c49-4d9c-8741-1d2c744e3333",
   "name": "Drink Water",
   "description": "8 cups per day",
-  "frequency": "daily",
+  "frequency": "Daily",
   "isActive": true,
   "difficulty": "Trivial",
   "createdAt": "2025-11-27T04:05:00.000Z"
@@ -310,7 +310,7 @@ Example response:
   "habit": {
     "id": "7f664e4a-64b6-42bb-bf51-91f44e6c1111",
     "name": "Study",
-    "frequency": "daily",
+    "frequency": "Daily",
     "isActive": true,
     "difficulty": "Hard"
   },

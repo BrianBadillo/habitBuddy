@@ -4,7 +4,7 @@ import 'dotenv/config'
 import cookieParser from 'cookie-parser'
 import { supabase } from './db/supabaseClient.js'
 import { TABLES } from './db/tables.js'
-import { PET_MOOD_DOWN } from './constants.js'
+import { PET_MOOD_DOWN, FREQUENCY } from './constants.js'
 
 import authRouter from './routes/auth.js'
 import meRouter from './routes/me.js'
@@ -106,13 +106,13 @@ async function dailyMaintenance() {
         const frequency = streak.habit?.frequency;
         let shouldReset = false;
 
-        if (frequency == 'daily') {
+        if (frequency == FREQUENCY.DAILY) {
           // Daily: reset if more than 1 day has passed
           const daysSinceCompletion = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
           if (daysSinceCompletion > 1) {
             shouldReset = true;
           }
-        } else if (frequency == 'weekly') {
+        } else if (frequency == FREQUENCY.WEEKLY) {
           // Weekly: reset only on Monday if habit wasn't completed in the past week (since last Monday)
           if (todayDay === 1) { // Monday (week starts on Monday)
             // Calculate last Monday (start of current week)
@@ -125,7 +125,7 @@ async function dailyMaintenance() {
               shouldReset = true;
             }
           }
-        } else if (frequency == 'monthly') {
+        } else if (frequency == FREQUENCY.MONTHLY) {
           // Monthly: reset only on the 1st if habit wasn't completed in the past month
           if (todayDate === 1) {
             // Calculate first day of last month
@@ -174,15 +174,15 @@ async function dailyMaintenance() {
       for (const habit of inactiveHabits) {
         let shouldActivate = false;
 
-        if (habit.frequency == 'daily') {
+        if (habit.frequency == FREQUENCY.DAILY) {
           // Daily habits reactivate every day
           shouldActivate = true;
-        } else if (habit.frequency == 'weekly') {
+        } else if (habit.frequency == FREQUENCY.WEEKLY) {
           // Weekly habits reactivate on Monday (day 1)
           if (todayDay === 1) {
             shouldActivate = true;
           }
-        } else if (habit.frequency == 'monthly') {
+        } else if (habit.frequency == FREQUENCY.MONTHLY) {
           // Monthly: reactivate only on the 1st (start of month)
           if (todayDate === 1) {
             shouldActivate = true;
