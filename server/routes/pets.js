@@ -2,10 +2,32 @@ import { Router } from 'express'
 import { supabase } from '../db/supabaseClient.js'
 import { requireAuth } from '../middleware/auth.js'
 import { TABLES } from '../db/tables.js'
-import { PET_MOOD_UP } from '../constants.js'
+import { PET_MOOD, PET_MOOD_UP } from '../constants.js'
 
 // Create a router for pet-related routes
 const router = Router()
+
+// GET /api/pet/types - List all available pet types
+/* Example response:
+[
+  { "id": 1, "name": "Cat", "baseSpriteUrl": "/sprites/cat-base.png" },
+  { "id": 2, "name": "Dog", "baseSpriteUrl": "/sprites/dog-base.png" }
+]*/
+router.get('/types', async (req, res) => {
+    const { data: petTypes, error } = await supabase
+        .from(TABLES.PET_TYPES)
+        .select('id, name, base_sprite_url');
+
+    if (error) {
+        return res.status(500).json({ error: 'Failed to fetch pet types' });
+    }
+
+    res.json(petTypes.map(pt => ({
+        id: pt.id,
+        name: pt.name,
+        baseSpriteUrl: pt.base_sprite_url
+    })));
+});
 
 // GET /api/pet - Get the full pet state for the logged-in user
 /* Example response:
@@ -187,6 +209,83 @@ router.post('/ping', requireAuth, async (req, res) => {
         petType: updatedPetData.pet_type,
         currentStage: updatedPetData.current_stage,
         lastInteractionDate: updatedPetData.last_interaction_date
+    });
+});
+
+// POST /api/pet - Switch the pet to a different type
+/* Example request:
+{
+  "petTypeId": 2
+  "name": "Buddy"
+}
+Example response:
+{
+  "id": "a1b2c3d4-5678-90ab-cdef-1234567890ab",
+  "name": "Buddy",
+  "xp": 0,
+  "level": 1,
+  "mood": "neutral",
+  "petType": { "id": 2, "name": "Dog", "baseSpriteUrl": "/sprites/dog-base.png" },
+  "currentStage": { "id": 1, "stageNumber": 1, "name": "Baby Dog", "spriteUrl": "/sprites/dog-baby.png" },
+  "lastInteractionDate": null
+}*/
+router.post('/', requireAuth, async (req, res) => {
+    const userId = req.user.id;
+    const { petTypeId, name } = req.body;
+
+    // Validate input
+    if (!petTypeId || !name) {
+        return res.status(400).json({ error: 'petTypeId and name are required' });
+    }
+
+    // Fetch the initial stage for the new pet type
+    const { data: initialStage, error: stageError } = await supabase
+        .from(TABLES.PET_STAGES)
+        .select('id')
+        .eq('pet_type_id', petTypeId)
+        .eq('stage_number', 1)
+        .single();
+    if (stageError || !initialStage) {
+        return res.status(400).json({ error: 'Invalid pet type or no initial stage found' });
+    }
+
+    // Create new pet for the user
+    const { data: newPetData, error: petError } = await supabase
+        .from(TABLES.PETS)
+        .insert({
+            user_id: userId,
+            pet_type_id: petTypeId,
+            current_stage_id: initialStage.id,
+            name,
+            xp: 0,
+            level: 1,
+            mood: PET_MOOD.NEUTRAL
+        })
+        .select(`
+            id,
+            name,
+            xp,
+            level,
+            mood,
+            last_interaction_date,
+            pet_type:pet_type_id ( id, name, base_sprite_url ),
+            current_stage:current_stage_id ( id, stage_number, name, sprite_url )
+        `)
+        .single();
+    if (petError || !newPetData) {
+        return res.status(500).json({ error: 'Failed to create new pet' });
+    }
+
+    // Respond with new pet data
+    res.json({
+        id: newPetData.id,
+        name: newPetData.name,
+        xp: newPetData.xp,
+        level: newPetData.level,
+        mood: newPetData.mood,
+        petType: newPetData.pet_type,
+        currentStage: newPetData.current_stage,
+        lastInteractionDate: newPetData.last_interaction_date
     });
 });
 
