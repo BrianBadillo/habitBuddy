@@ -137,31 +137,32 @@ router.get('/streaks', requireAuth, async (req, res) => {
             return res.status(500).json({ error: profilesError.message });
         }
 
-        // Fetch streaks for best streaks
-        const { data: streaks, error: streaksError } = await supabase
+        // Aggregate best (max) longest_streak per user
+        const { data: streakAgg, error: streaksError } = await supabase
             .from(TABLES.STREAKS)
-            .select('user_id, longest_streak')
-            .in('user_id', ids);
+            .select('user_id, longest_streak:max(longest_streak)')
+            .in('user_id', ids)
+            .group('user_id');
         if (streaksError) {
             return res.status(500).json({ error: streaksError.message });
         }
 
         // Build maps
         const profileMap = new Map(profiles.map(p => [p.id, p]));
-        const streakMap = new Map(streaks.map(s => [s.user_id, s]));
+        const streakMap = new Map(streakAgg.map(s => [s.user_id, s.longest_streak]));
 
         // Build leaderboard entries and sort by best streak
         const entries = ids
         .map(id => {
             const user = profileMap.get(id);
-            const streak = streakMap.get(id);
-            if (!user || !streak) return null; // Skip if missing data
+            const longest = streakMap.get(id) ?? 0;
+            if (!user) return null;
             return {
                 user: { id: user.id, username: user.username },
-                longest_streak: streak.longest_streak
+                longest_streak: longest
             };
         })
-        .filter(Boolean) // Remove nulls
+        .filter(Boolean)
         .sort((a, b) => b.longest_streak - a.longest_streak)
         .map((entry, idx) => ({
             rank: idx + 1,
